@@ -1,0 +1,49 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+      - id: black
+        args:
+          - "-l 120"
+        exclude: >
+          (?x)^(
+            migrations/.+
+          )$
+  
+  - repo: https://github.com/hadialqattan/pycln
+    rev: v2.1.2
+    hooks:
+      - id: pycln
+        exclude: >
+          (?x)^(
+            migrations/.+
+          )$
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        args:
+          - "-l=120"
+          - "--multi-line=3"
+          - "--tc"
+          - "--up"
+          - "--force-grid-wrap=0"
+        exclude: >
+          (?x)^(
+            migrations/.+
+          )$
+  
+  - repo: https://github.com/PyCQA/flake8
+    rev: 5.0.2
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
+        args:
+          - "--max-line-length=120"
+          - "--extend-ignore=E203,B008,F405,F401"
+        exclude: >
+          (?x)^(
+            migrations/.+
+          )$

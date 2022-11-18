@@ -1,0 +1,27 @@
+version: "3"
+services:
+  pgsql:
+    image: postgres:14.0
+    container_name: pgsql
+    environment:
+      - POSTGRES_USER=trustspace
+      - POSTGRES_PASSWORD=trustspace
+      - POSTGRES_DB=trustspace
+    ulimits:
+      nofile:
+        soft: 40000
+        hard: 40000
+    volumes:
+      - ./.local/pgsql/data:/var/lib/pgsql
+    ports:
+      - 5432:5432
+  api:
+    build:
+      context: .
+    container_name: api
+    env_file:
+      - .env
+    depends_on:
+      - pgsql
+    ports:
+      - 8000:8000
