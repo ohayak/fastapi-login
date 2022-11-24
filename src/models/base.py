@@ -114,3 +114,7 @@ TEXT_LEN = 255
 KEY_LEN = 1024
 
 INDEX_KEY_COLLATION_ARGS = {"collation": "C"}
+
+
+# user model version 0
+
