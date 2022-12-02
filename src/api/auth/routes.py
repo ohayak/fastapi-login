@@ -5,8 +5,20 @@ from fastapi import HTTPException, status, Depends
 from datetime import timedelta, datetime
 from ..auth.helpers import get_current_active_user, create_acces_token, authenticate_user
 from ..auth.schema import User, Token
+from . import schema
+from .database import engine, Session
+
+schema.Base.metadata.create_all(bind=engine)
 
 router = APIRouter()
+
+
+def get_database():
+    db = Session()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
@@ -21,9 +33,6 @@ fake_users_db = {
         "disabled": False,
     }
 }
-
-
-
 
 
 @router.post("/auth/token", response_model=Token)
