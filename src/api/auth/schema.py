@@ -2,11 +2,6 @@ import string
 from typing import Optional
 from pydantic import EmailStr, Field, validator
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-from sqlalchemy.orm import relationship
-
-from src.models.base import Base
-
 
 class SearchReq(BaseModel):
     query: str = Field(max_length=80)

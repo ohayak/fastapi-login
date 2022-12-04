@@ -3,6 +3,7 @@ from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from api import api_router
+
 from settings import settings
 
 app = FastAPI(title="bib-api", version="0.0.1", root_path=settings.root_path)
@@ -40,13 +41,11 @@ if settings.enable_cors:
 
 @app.on_event("startup")
 async def startup() -> None:
-    # await engine.connect()
     return
 
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
-    # await engine.close()
     return
 
 

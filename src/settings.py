@@ -22,12 +22,12 @@ class Settings(BaseSettings):
     # DB settings
     db_migrate: bool = Field(default=False)
     db_echo: str = Field(default=None)
-    db_driver: str = Field(default="postgresql")
-    db_user: str = Field(default="coredata")
-    db_password: str = Field(default="coredata")
-    db_host: str = Field(default="coredata")
-    db_port: int = Field(default=5432)
-    db_name: str = Field(default="coredata")
+    db_driver: str = Field(default="mysql+pymysql")
+    db_user: str = Field(default="bib")
+    db_password: str = Field(default="bib")
+    db_host: str = Field(default="localhost")
+    db_port: int = Field(default=3306)
+    db_name: str = Field(default="bib")
 
     # Server settings
     host: str = Field(default="0.0.0.0")
@@ -46,6 +46,10 @@ class Settings(BaseSettings):
 
     accesslog: bool = Field(default=False)
     errorlog: bool = Field(default=True)
+
+    scheduler_rpc_host = Field(default="localhost")
+    scheduler_rpc_port: int = Field(default=18812)
+
 
     @validator("log_sink")
     def set_log_sink(cls, v):

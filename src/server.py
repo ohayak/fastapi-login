@@ -17,13 +17,13 @@ if __name__ == "__main__":
         cmd.append("--reload")
 
     if settings.accesslog:
-        cmd = cmd + ["--access-logfile", "-"]
+        cmd.extend(["--access-logfile", "-"])
     
     if settings.errorlog:
-        cmd = cmd + ["--error-logfile", "-"]
+        cmd.extend(["--error-logfile", "-"])
 
     if settings.root_path:
-        cmd = cmd + ["--root-path", settings.root_path]
+        cmd.extend(["--root-path", settings.root_path])
 
     cmd.append("src/app:app")
 
