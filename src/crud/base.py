@@ -39,7 +39,9 @@ class RouterMixin:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No router permissions")
 
 
-class BaseCrud(RouterMixin, Generic[SchemaModelT, SchemaListT, SchemaFilterT, SchemaCreateT, SchemaReadT, SchemaUpdateT]):
+class BaseCrud(
+    RouterMixin, Generic[SchemaModelT, SchemaListT, SchemaFilterT, SchemaCreateT, SchemaReadT, SchemaUpdateT]
+):
     schema_model: Type[SchemaModelT] = None
     schema_list: Type[SchemaListT] = None
     schema_filter: Type[SchemaFilterT] = None
@@ -132,7 +134,9 @@ class BaseCrud(RouterMixin, Generic[SchemaModelT, SchemaListT, SchemaFilterT, Sc
         return self.schema_list or self.schema_model
 
     def _create_schema_filter(self) -> Type[SchemaFilterT]:
-        return self.schema_filter or schema_create_by_schema(self.schema_list, f"{self.schema_name_prefix}Filter", set_none=True)
+        return self.schema_filter or schema_create_by_schema(
+            self.schema_list, f"{self.schema_name_prefix}Filter", set_none=True
+        )
 
     def _create_schema_read(self) -> Optional[Type[SchemaReadT]]:
         return self.schema_read

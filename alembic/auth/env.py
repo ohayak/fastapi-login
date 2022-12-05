@@ -1,6 +1,6 @@
 import asyncio
-import sys
 import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -25,6 +25,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 
 from services.auth.models import *
+
 target_metadata = SQLModel.metadata
 
 from services.database import async_engine

@@ -1,15 +1,16 @@
 from datetime import datetime
 from typing import Any, List, Optional, Sequence, Union
 
-from pydantic import EmailStr, SecretStr, BaseModel
+from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import and_, func
 from sqlalchemy.sql.selectable import Exists
-from sqlmodel import SQLModel, Session, Relationship, select, Field
+from sqlmodel import Field, Relationship, Session, SQLModel, select
 
 
 class BaseTokenData(BaseModel):
     id: int
     username: str
+
 
 class TokenStoreModel(SQLModel, table=True):
     __tablename__ = "auth_token"
@@ -33,10 +34,7 @@ class UserRoleLink(SQLModel, table=True):
 
 class UserGroupLink(SQLModel, table=True):
     __tablename__ = "auth_user_groups"
-    user_id: int = Field(
-        primary_key=True,
-        foreign_key="auth_user.id"
-    )
+    user_id: int = Field(primary_key=True, foreign_key="auth_user.id")
     group_id: int = Field(
         primary_key=True,
         foreign_key="auth_group.id",
@@ -66,8 +64,10 @@ class RolePermissionLink(SQLModel, table=True):
         foreign_key="auth_permission.id",
     )
 
+
 class PasswordStr(SecretStr, str):
     pass
+
 
 class User(SQLModel, table=True):
     """User"""
@@ -108,7 +108,9 @@ class User(SQLModel, table=True):
             .where(*role_whereclause)
         )
         # check user group
-        role_group_ids = select(GroupRoleLink.group_id).join(Role, and_(*role_whereclause, Role.id == GroupRoleLink.role_id))
+        role_group_ids = select(GroupRoleLink.group_id).join(
+            Role, and_(*role_whereclause, Role.id == GroupRoleLink.role_id)
+        )
         group_user_ids = (
             select(UserGroupLink.user_id)
             .where(UserGroupLink.user_id == self.id)
@@ -216,6 +218,7 @@ class Role(BaseRBAC, table=True):
 
 class Group(BaseRBAC, table=True):
     """Group"""
+
     __tablename__ = "auth_group"
     roles: List["Role"] = Relationship(back_populates="groups", link_model=GroupRoleLink)
 

@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, List
-from pydantic import Field
 
 from pydantic import BaseModel, Field, validator
+
 
 class JobModel(BaseModel):
     id: str = Field(...)
@@ -24,6 +24,7 @@ class JobModel(BaseModel):
     @classmethod
     def parse_job(cls, job):
         return job and cls(**{k: getattr(job, k, None) for k in cls.__fields__})
+
 
 class JobUpdate(BaseModel):
     name: str = Field(None)

@@ -1,18 +1,7 @@
 import datetime
 import re
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Pattern,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, Generic, List, Optional, Pattern, Tuple, Type, Union
 
 from fastapi import APIRouter, Body, Depends, Query
 from fastapi.encoders import DictIntStrAny, SetIntStr
@@ -31,15 +20,7 @@ try:
 except ImportError:
     from sqlalchemy.util.langhelpers import memoized_property as cached_property
 
-from .base import (
-    BaseCrud,
-    SchemaCreateT,
-    SchemaFilterT,
-    SchemaListT,
-    SchemaModelT,
-    SchemaReadT,
-    SchemaUpdateT,
-)
+from .base import BaseCrud, SchemaCreateT, SchemaFilterT, SchemaListT, SchemaModelT, SchemaReadT, SchemaUpdateT
 from .parsing import (
     SqlField,
     SQLModelField,
@@ -49,13 +30,7 @@ from .parsing import (
     get_python_type_parse,
 )
 from .schema import BaseApiOut, ItemListSchema
-from .utils import (
-    SqlalchemyDatabase,
-    get_engine_db,
-    parser_item_id,
-    parser_str_set_list,
-    schema_create_by_modelfield,
-)
+from .utils import SqlalchemyDatabase, get_engine_db, parser_item_id, parser_str_set_list, schema_create_by_modelfield
 
 sql_operator_pattern: Pattern = re.compile(r"^\[(=|<=|<|>|>=|!|!=|<>|\*|!\*|~|!~|-)]")
 sql_operator_map: Dict[str, str] = {
@@ -278,8 +253,12 @@ class SQLModelCrud(BaseCrud, SQLModelSelector):
     def _create_schema_filter(self) -> Type[SchemaFilterT]:
         if self.schema_filter:
             return self.schema_filter
-        self.list_filter = self.parser.filter_insfield(self.list_filter, save_class=(Label,)) or self._select_entities.values()
-        modelfields = list(filter(None, [self.parser.get_modelfield(sqlfield, clone=True) for sqlfield in self.list_filter]))
+        self.list_filter = (
+            self.parser.filter_insfield(self.list_filter, save_class=(Label,)) or self._select_entities.values()
+        )
+        modelfields = list(
+            filter(None, [self.parser.get_modelfield(sqlfield, clone=True) for sqlfield in self.list_filter])
+        )
         # todo perfect
         for modelfield in modelfields:
             if not issubclass(modelfield.type_, (Enum, bool)) and issubclass(
@@ -309,7 +288,8 @@ class SQLModelCrud(BaseCrud, SQLModelSelector):
         if self.schema_update:
             return self.schema_update
         self.update_fields = (
-            self.parser.filter_insfield(self.update_fields, save_class=(ModelField,)) or self.schema_model.__fields__.values()
+            self.parser.filter_insfield(self.update_fields, save_class=(ModelField,))
+            or self.schema_model.__fields__.values()
         )
         modelfields = [self.parser.get_modelfield(ins, clone=True) for ins in self.update_fields]
         if self.update_exclude is None:  # deprecated in version 0.4.0
@@ -318,7 +298,9 @@ class SQLModelCrud(BaseCrud, SQLModelSelector):
                 for ins in self.parser.filter_insfield(self.readonly_fields)  # readonly fields, deprecated
             }
         else:
-            exclude = {k for k, v in ValueItems.merge(self.update_exclude, {}).items() if not isinstance(v, (dict, list, set))}
+            exclude = {
+                k for k, v in ValueItems.merge(self.update_exclude, {}).items() if not isinstance(v, (dict, list, set))
+            }
         modelfields = [field for field in modelfields if field.name not in exclude]
         return schema_create_by_modelfield(f"{self.schema_name_prefix}Update", modelfields, set_none=True)
 
@@ -341,7 +323,11 @@ class SQLModelCrud(BaseCrud, SQLModelSelector):
 
     def read_item(self, obj: SchemaModelT) -> SchemaReadT:
         """read database data and parse to schema_read"""
-        parse = self.schema_read.from_orm if getattr(self.schema_read.Config, "orm_mode", False) else self.schema_read.parse_obj
+        parse = (
+            self.schema_read.from_orm
+            if getattr(self.schema_read.Config, "orm_mode", False)
+            else self.schema_read.parse_obj
+        )
         return parse(obj)
 
     def update_item(self, obj: SchemaModelT, values: Dict[str, Any]) -> None:

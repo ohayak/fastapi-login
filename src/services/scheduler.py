@@ -1,17 +1,18 @@
 import rpyc
+
 from settings import settings
 
+
 class SchedulerClient:
-    
     def __init__(self, host, port):
         self.host = host
         self.port = port
-     
+
     def __enter__(self):
         self.conn = rpyc.connect(self.host, self.port)
         self.proxy = self.conn.root
         return self
- 
+
     def __exit__(self, *args):
         self.conn.close()
 
@@ -32,9 +33,10 @@ class SchedulerClient:
 
     def get_job_result(self, job_id):
         return self.proxy.get_job_result(job_id)
-    
+
     def get_schedules(self):
         return self.proxy.get_schedules()
+
 
 def get_scheduler():
     with SchedulerClient(settings.scheduler_rpc_host, settings.scheduler_rpc_port) as client:

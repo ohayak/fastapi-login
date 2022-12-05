@@ -51,7 +51,9 @@ class SQLModelFieldParser:
     def __init__(self, default_model: Type[SQLModel]):
         self.default_model = default_model
 
-    def get_modelfield(self, field: Union[ModelField, SQLModelField, Label], clone: bool = False) -> Optional[ModelFieldType]:
+    def get_modelfield(
+        self, field: Union[ModelField, SQLModelField, Label], clone: bool = False
+    ) -> Optional[ModelFieldType]:
         """Get pydantic ModelField from sqlmodel field.
         Args:
             field:  ModelField, SQLModelField or Label
@@ -205,7 +207,13 @@ class PropertyField(ModelField):
     """Use this to quickly initialize a ModelField, mainly used in schema_read and schema_update"""
 
     def __init__(
-        self, *, name: str, type_: Type[Any], required: bool = False, field_info: Optional[FieldInfo] = None, **kwargs: Any
+        self,
+        *,
+        name: str,
+        type_: Type[Any],
+        required: bool = False,
+        field_info: Optional[FieldInfo] = None,
+        **kwargs: Any
     ) -> None:
         kwargs.setdefault("class_validators", {})
         kwargs.setdefault("model_config", BaseConfig)

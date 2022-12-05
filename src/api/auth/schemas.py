@@ -1,4 +1,4 @@
-from pydantic import BaseModel, SecretStr, validator, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, SecretStr, validator
 
 from services.auth.models import User
 

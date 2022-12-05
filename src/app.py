@@ -1,9 +1,9 @@
 import alembic.config
-from fastapi import FastAPI, Request, Depends, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from api.auth.routes import router as auth_router
 
+from api.auth.routes import router as auth_router
 from settings import settings
 
 app = FastAPI(title="bib-api", version="0.0.1", root_path=settings.root_path)
@@ -57,5 +57,3 @@ if settings.db_migrate:
             "heads",
         ]
     )
-
-

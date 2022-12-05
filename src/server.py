@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     if settings.accesslog:
         cmd.extend(["--access-logfile", "-"])
-    
+
     if settings.errorlog:
         cmd.extend(["--error-logfile", "-"])
 

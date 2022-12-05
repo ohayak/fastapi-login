@@ -1,6 +1,7 @@
-from typing import Any, Callable, Dict, Optional, Tuple
 from datetime import datetime
-from pydantic import BaseModel, validator, Extra
+from typing import Any, Dict, Optional, Tuple
+
+from pydantic import BaseModel, Extra, validator
 from pydantic.main import ModelMetaclass
 
 try:
@@ -8,8 +9,8 @@ try:
 except ImportError:
     import json
 
-class BaseSchema(BaseModel):
 
+class BaseSchema(BaseModel):
     class Config:
         orm_mode = True
         extra = Extra.allow

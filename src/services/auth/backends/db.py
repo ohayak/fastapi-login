@@ -3,14 +3,11 @@ from datetime import datetime, timedelta
 from typing import Optional, Union
 
 from sqlalchemy import Column, String, delete
-from sqlmodel import SQLModel, Field, select, Session
-
-from sqlmodel import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from .base import BaseTokenStore, _TokenDataSchemaT
+from sqlmodel import Field, Session, SQLModel, select
 
 from ..models import TokenStoreModel
+from .base import BaseTokenStore, _TokenDataSchemaT
 
 
 class DbTokenStore(BaseTokenStore):

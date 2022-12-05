@@ -2,38 +2,25 @@ import asyncio
 import functools
 import inspect
 from collections.abc import Coroutine
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from functools import cached_property
+from typing import Any, Callable, Generic, Optional, Sequence, Tuple, Type, TypeVar, Union
 
-from fastapi import Depends, FastAPI, HTTPException, params, Response, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, params
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from passlib.context import CryptContext
 from pydantic import SecretStr
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import Session, select
 from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.websockets import WebSocket
 
+from services.database import async_engine
+
 from .backends.base import BaseTokenStore
 from .backends.db import DbTokenStore
 from .models import Role, User, UserRoleLink
-
-from sqlmodel import Session
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from functools import cached_property
-
-from services.database import async_engine
 
 _UserModelT = TypeVar("_UserModelT", bound=User)
 
@@ -41,6 +28,7 @@ _UserModelT = TypeVar("_UserModelT", bound=User)
 class OAuth2(OAuth2PasswordBearer):
     async def __call__(self, request: Request) -> Optional[str]:
         return request.auth.backend.get_user_token(request)
+
 
 class AuthBackend(AuthenticationBackend, Generic[_UserModelT]):
     def __init__(self, auth: "Auth", token_store: BaseTokenStore):
@@ -58,6 +46,7 @@ class AuthBackend(AuthenticationBackend, Generic[_UserModelT]):
 
     def attach_middleware(self, app: FastAPI):
         app.add_middleware(AuthenticationMiddleware, backend=self)
+
 
 class Auth(Generic[_UserModelT]):
     user_model: Type[_UserModelT] = None
@@ -116,7 +105,9 @@ class Auth(Generic[_UserModelT]):
         permissions_ = (permissions,) if not permissions or isinstance(permissions, str) else tuple(permissions)
 
         async def has_requires(user: _UserModelT) -> bool:
-            return user and await self.db.run_sync(user.has_requires, roles=roles, groups=groups, permissions=permissions)
+            return user and await self.db.run_sync(
+                user.has_requires, roles=roles, groups=groups, permissions=permissions
+            )
 
         async def depend(
             request: Request,
@@ -228,5 +219,6 @@ class Auth(Generic[_UserModelT]):
         if commit:
             await self.db.commit()
         return user
+
 
 auth = Auth(db=AsyncSession(async_engine))

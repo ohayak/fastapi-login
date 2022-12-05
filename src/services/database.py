@@ -1,11 +1,11 @@
-from typing import Any, Callable, Generator
-from settings import settings
-
-from sqlmodel import Session, create_engine
+from typing import Any, Generator
 
 from sqlalchemy.engine.url import URL
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.future import Engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
+from sqlmodel import Session, create_engine
+
+from settings import settings
 
 url = URL.create(
     drivername=settings.db_driver,
@@ -19,6 +19,7 @@ url = URL.create(
 engine: Engine = create_engine(url)
 
 async_engine: AsyncEngine = create_async_engine(url, future=True)
+
 
 def gen_session(auto_commit=True) -> Generator[Session, Any, None]:
     with Session(engine) as session:

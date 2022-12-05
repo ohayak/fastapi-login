@@ -50,7 +50,6 @@ class Settings(BaseSettings):
     scheduler_rpc_host = Field(default="localhost")
     scheduler_rpc_port: int = Field(default=18812)
 
-
     @validator("log_sink")
     def set_log_sink(cls, v):
         return stdout if v == LogSink.STDOUT else stderr

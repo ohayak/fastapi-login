@@ -1,17 +1,14 @@
-from typing import TypeVar
-
-from fastapi import Depends, Form, APIRouter, Request, Response
-from fastapi.responses import RedirectResponse
-
-
 import contextlib
 
-from .schemas import UserLoginOut
-from services.database import AsyncSession, async_engine
-from crud.utils import schema_create_by_schema
+from fastapi import APIRouter, Depends, Form, Request, Response
+from fastapi.responses import RedirectResponse
+
 from crud.schema import BaseApiOut
-from functools import cached_property
+from crud.utils import schema_create_by_schema
 from services.auth import auth
+from services.database import AsyncSession, async_engine
+
+from .schemas import UserLoginOut
 
 router = APIRouter(prefix="/auth")
 
@@ -19,6 +16,7 @@ router = APIRouter(prefix="/auth")
 router.dependencies.insert(0, Depends(auth.backend.authenticate))
 
 UserInfo = schema_create_by_schema(auth.user_model, "UserInfo", exclude={"password"})
+
 
 @router.get("/userinfo", description="User Profile", response_model=BaseApiOut[UserInfo])
 @auth.requires()
@@ -47,4 +45,3 @@ async def oauth_token(request: Request, response: Response, username: str = Form
     token_info.access_token = await request.auth.backend.token_store.write_token(request.user.dict())
     response.set_cookie("Authorization", f"bearer {token_info.access_token}")
     return BaseApiOut(data=token_info)
-
