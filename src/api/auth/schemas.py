@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr, Field, SecretStr, validator
 from services.auth.models import User
 
 
-class UserLoginOut(User):
+class UserLoginOut(BaseModel):
     """User login information"""
 
     token_type: str = "bearer"
