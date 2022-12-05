@@ -1,18 +1,29 @@
 from datetime import datetime
 from typing import Any, List, Optional, Sequence, Union
 
-from pydantic import EmailStr, SecretStr
+from pydantic import EmailStr, SecretStr, BaseModel
 from sqlalchemy import and_, func
-from sqlalchemy.schema import ForeignKey
 from sqlalchemy.sql.selectable import Exists
 from sqlmodel import SQLModel, Session, Relationship, select, Field
+
+
+class BaseTokenData(BaseModel):
+    id: int
+    username: str
+
+class TokenStoreModel(SQLModel, table=True):
+    __tablename__ = "auth_token"
+    id: int = Field(default=None, primary_key=True, nullable=False)
+    token: str = Field(max_length=48, unique=True, index=True, nullable=False)
+    data: str = Field(default="")
+    create_time: datetime = Field(default_factory=datetime.now)
 
 
 class UserRoleLink(SQLModel, table=True):
     __tablename__ = "auth_user_roles"
     user_id: int = Field(
         primary_key=True,
-        foreign_key="auth_user.id"
+        foreign_key="auth_user.id",
     )
     role_id: int = Field(
         primary_key=True,

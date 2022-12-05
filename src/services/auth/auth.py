@@ -33,6 +33,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from functools import cached_property
 
+from services.database import async_engine
+
 _UserModelT = TypeVar("_UserModelT", bound=User)
 
 
@@ -226,3 +228,5 @@ class Auth(Generic[_UserModelT]):
         if commit:
             await self.db.commit()
         return user
+
+auth = Auth(db=AsyncSession(async_engine))

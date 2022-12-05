@@ -8,15 +8,9 @@ from sqlmodel import SQLModel, Field, select, Session
 from sqlmodel import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..backends.base import BaseTokenStore, _TokenDataSchemaT
+from .base import BaseTokenStore, _TokenDataSchemaT
 
-
-class TokenStoreModel(SQLModel, table=True):
-    __tablename__ = "auth_token"
-    id: int = Field(default=None, primary_key=True, nullable=False)
-    token: str = Field(..., max_length=48, sa_column=Column(String(48), unique=True, index=True, nullable=False))
-    data: str = Field(default="")
-    create_time: datetime = Field(default_factory=datetime.now)
+from ..models import TokenStoreModel
 
 
 class DbTokenStore(BaseTokenStore):

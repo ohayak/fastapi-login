@@ -1,6 +1,5 @@
 from typing import Generic, Optional, TypeVar, Union
-
-from ..schemas import BaseTokenData
+from ..models import BaseTokenData
 
 _TokenDataSchemaT = TypeVar("_TokenDataSchemaT", bound=BaseTokenData)
 

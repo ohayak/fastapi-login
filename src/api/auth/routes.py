@@ -7,13 +7,12 @@ from fastapi.responses import RedirectResponse
 import contextlib
 
 from .schemas import UserLoginOut
-from .auth import Auth, OAuth2
 from services.database import AsyncSession, async_engine
 from crud.utils import schema_create_by_schema
 from crud.schema import BaseApiOut
 from functools import cached_property
+from services.auth import auth
 
-auth = Auth(db=AsyncSession(async_engine))
 router = APIRouter(prefix="/auth")
 
 

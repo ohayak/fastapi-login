@@ -1,11 +1,6 @@
 from pydantic import BaseModel, SecretStr, validator, EmailStr, Field
 
-from .models import User
-
-
-class BaseTokenData(BaseModel):
-    id: int
-    username: str
+from services.auth.models import User
 
 
 class UserLoginOut(User):
