@@ -22,11 +22,11 @@ class Settings(BaseSettings):
     # DB settings
     db_migrate: bool = Field(default=False)
     db_echo: str = Field(default=None)
-    db_driver: str = Field(default="mysql+pymysql")
+    db_driver: str = Field(default="postgresql+asyncpg")
     db_user: str = Field(default="bib")
     db_password: str = Field(default="bib")
     db_host: str = Field(default="localhost")
-    db_port: int = Field(default=3306)
+    db_port: int = Field(default=5432)
     db_name: str = Field(default="bib")
 
     # Server settings

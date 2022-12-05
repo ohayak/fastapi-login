@@ -40,7 +40,7 @@ from .base import (
     SchemaReadT,
     SchemaUpdateT,
 )
-from .parser import (
+from .parsing import (
     SqlField,
     SQLModelField,
     SQLModelFieldParser,

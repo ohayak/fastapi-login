@@ -1,56 +1,51 @@
-from fastapi import APIRouter, Body, Path, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
-from fastapi import HTTPException, status, Depends
-from datetime import timedelta, datetime
-from ..auth.helpers import get_current_active_user, create_acces_token, authenticate_user
-from ..auth.schema import User, Token
-from . import schema
-from .database import engine, Session
+from typing import TypeVar
 
-schema.Base.metadata.create_all(bind=engine)
-
-router = APIRouter()
+from fastapi import Depends, Form, APIRouter, Request, Response
+from fastapi.responses import RedirectResponse
 
 
-def get_database():
-    db = Session()
-    try:
-        yield db
-    finally:
-        db.close()
+import contextlib
+
+from .schemas import UserLoginOut
+from .auth import Auth, OAuth2
+from services.database import AsyncSession, async_engine
+from crud.utils import schema_create_by_schema
+from crud.schema import BaseApiOut
+from functools import cached_property
+
+auth = Auth(db=AsyncSession(async_engine))
+router = APIRouter(prefix="/auth")
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+router.dependencies.insert(0, Depends(auth.backend.authenticate))
 
-# fake data for test building
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-    }
-}
+UserInfo = schema_create_by_schema(auth.user_model, "UserInfo", exclude={"password"})
+
+@router.get("/userinfo", description="User Profile", response_model=BaseApiOut[UserInfo])
+@auth.requires()
+async def userinfo(request: Request):
+    return BaseApiOut(data=request.user)
 
 
-@router.post("/auth/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_acces_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+@router.get("/logout", description="Logout", response_model=BaseApiOut)
+@auth.requires()
+async def user_logout(request: Request):
+    token_value = request.auth.backend.get_user_token(request)
+    with contextlib.suppress(Exception):
+        await auth.backend.token_store.destroy_token(token=token_value)
+    response = RedirectResponse(url="/")
+    response.delete_cookie("Authorization")
+    return response
 
 
-@router.get("/auth/users/me")
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
-    return current_user
+@router.post("/token", description="OAuth2 Token", response_model=BaseApiOut[UserLoginOut])
+async def oauth_token(request: Request, response: Response, username: str = Form(...), password: str = Form(...)):
+    if request.scope.get("user") is None:
+        request.scope["user"] = await request.auth.authenticate_user(username=username, password=password)
+    if request.scope.get("user") is None:
+        return BaseApiOut(status=-1, msg="Incorrect username or password!")
+    token_info = UserLoginOut.parse_obj(request.user)
+    token_info.access_token = await request.auth.backend.token_store.write_token(request.user.dict())
+    response.set_cookie("Authorization", f"bearer {token_info.access_token}")
+    return BaseApiOut(data=token_info)
+

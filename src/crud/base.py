@@ -206,5 +206,5 @@ class BaseCrud(RouterMixin, Generic[SchemaModelT, SchemaListT, SchemaFilterT, Sc
             ) from error
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error Execute SQL：{error}",
+            detail=f"Error Execute SQL: {error}",
         ) from error

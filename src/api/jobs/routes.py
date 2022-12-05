@@ -66,5 +66,6 @@ async def add_job(
     data: JobUpdate = Body(default=None),  # type: ignore
     scheduler: SchedulerClient = Depends(get_scheduler)
 ):
-    scheduler.add_job(data.)
-    return BaseApiOut(data=JobModel.parse_job(job))
+    # scheduler.add_job(data.)
+    # return BaseApiOut(data=JobModel.parse_job(job))
+    pass

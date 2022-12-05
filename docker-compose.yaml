@@ -4,25 +4,17 @@ volumes:
   data:
   cache:
 services:
-  mysql:
-    image: mysql:8
-    container_name: mysql
+  pgsql:
+    image: postgres:14.0
+    container_name: pgsql
     environment:
-      - MYSQL_RANDOM_ROOT_PASSWORD=true
-      - MYSQL_USER=bib
-      - MYSQL_PASSWORD=bib
-      - MYSQL_DATABASE=bib
+      - POSTGRES_USER=bib
+      - POSTGRES_PASSWORD=bib
+      - POSTGRES_DB=bib
     volumes:
-      - data:/var/lib/mysql
+      - data:/var/lib/pgsql
     ports:
-      - 3306:3306
-  redis:
-    image: redis:6-alpine
-    container_name: redis
-    volumes:
-      - cache:/data
-    ports:
-      - 6379:6379
+      - 5432:5432
   api:
     build:
       context: .
@@ -30,7 +22,6 @@ services:
     env_file:
       - .env
     depends_on:
-      - mysql
-      - redis
+      - pgsql
     ports:
       - 8000:8000

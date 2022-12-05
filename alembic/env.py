@@ -21,9 +21,10 @@ fileConfig(config.config_file_name)
 # add your model's MetaData object here
 # for 'autogenerate' support
 # noqa
-from src.models.base import Base
+from src.api.auth.models import *
+from src.api.auth.backends.db import TokenStoreModel
 
-target_metadata = Base.metadata
+target_metadata = SQLModel.metadata
 
 
 def run_migrations_offline():
