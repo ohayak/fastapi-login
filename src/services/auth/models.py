@@ -76,7 +76,7 @@ class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True, nullable=False)
     username: str = Field(max_length=32, unique=True, index=True, nullable=False)
     is_active: bool = Field(default=True)
-    nickname: str = Field(None, max_length=40)
+    fullname: str = Field(None, max_length=64)
     password: PasswordStr = Field(max_length=128, nullable=False)
     email: EmailStr = Field(None, index=True, nullable=True)
     create_time: datetime = Field(default_factory=datetime.now)
@@ -94,7 +94,7 @@ class User(SQLModel, table=True):
 
     @property
     def display_name(self) -> str:
-        return self.nickname or self.username
+        return self.fullname or self.username
 
     @property
     def identity(self) -> str:
@@ -206,6 +206,10 @@ class Role(BaseRBAC, table=True):
     key: str = Field(max_length=40, unique=True, index=True, nullable=False)
     name: str = Field(default="", max_length=40)
     desc: str = Field(default="", max_length=400)
+    parent_id: Optional[int] = Field(
+        None,
+        foreign_key="auth_role.id",
+    )
     groups: List["Group"] = Relationship(back_populates="roles", link_model=GroupRoleLink)
     permissions: List["Permission"] = Relationship(back_populates="roles", link_model=RolePermissionLink)
 
@@ -213,10 +217,6 @@ class Role(BaseRBAC, table=True):
 class Group(BaseRBAC, table=True):
     """Group"""
     __tablename__ = "auth_group"
-    parent_id: Optional[int] = Field(
-        None,
-        foreign_key="auth_group.id",
-    )
     roles: List["Role"] = Relationship(back_populates="groups", link_model=GroupRoleLink)
 
 
