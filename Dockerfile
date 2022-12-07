@@ -13,4 +13,4 @@ COPY . /app/
 WORKDIR /app
 RUN conda env update -n base -f conda-env.yaml
 
-CMD ["python", "src/server.py"]
+CMD ["sh", "-c", "start.sh"]
