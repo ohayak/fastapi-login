@@ -13,8 +13,6 @@ ERRORLOG=${ERRORLOG:-true}
 
 args=("hypercorn" "--bind" "$HOST:$PORT" "--log-level" "$LOG_LEVEL")
 
-echo $RELOAD
-
 [ ! -z "$RELOAD" ] && args+=("--reload")
 [ ! -z "$ACCESSLOG" ] && args+=("--access-logfile" "-")
 [ ! -z "$ERRORLOG" ] && args+=("--error-logfile" "-")
@@ -27,6 +25,10 @@ for e in "${args[@]}"
 do
     cmd=${cmd:+$cmd }$e
 done
+
+if [ ! -z "$DB_MIGRATE" ]; then
+    alembic -c alembic/auth/conf.ini upgrade heads
+fi
 
 echo "Running server: $cmd"
 exec $cmd

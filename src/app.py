@@ -1,4 +1,3 @@
-from alembic.config import Config, command
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -47,8 +46,3 @@ async def startup() -> None:
 @app.on_event("shutdown")
 async def shutdown() -> None:
     return
-
-
-if settings.db_migrate:
-    alembic_cfg = Config("alembic/auth/conf.ini")
-    command.upgrade(alembic_cfg, "head")
