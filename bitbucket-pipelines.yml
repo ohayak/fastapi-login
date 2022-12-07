@@ -9,7 +9,6 @@ definitions:
       size: 2x
       name: Build
       runs-on:
-        - self.hosted
         - linux
       services:
         - docker
