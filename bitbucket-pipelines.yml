@@ -14,7 +14,7 @@ definitions:
         - docker
       script:
         - docker build -t $IMAGE_NAME:$BITBUCKET_TAG .
-        - docker login -u $SCW_REGISTRY_USERNAME -p $SCW_REGISTRY_PASSWORD $SCW_REGISTRY
+        - docker login -u $SCW_REGISTRY_USERNAME -p $SCW_REGISTRY_PASSWORD $SCW_REGISTRY_NAMESPACE
         - docker push $IMAGE_NAME:$BITBUCKET_TAG
 
 pipelines:
