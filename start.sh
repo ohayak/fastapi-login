@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 set -e
 
@@ -16,7 +16,7 @@ args=("hypercorn" "--bind" "$HOST:$PORT" "--log-level" "$LOG_LEVEL")
 [ ! -z "$RELOAD" ] && args+=("--reload")
 [ ! -z "$ACCESSLOG" ] && args+=("--access-logfile" "-")
 [ ! -z "$ERRORLOG" ] && args+=("--error-logfile" "-")
-[ ! -z "$WORKERS" ] && args+=("--root-path" "$WORKERS");
+[ ! -z "$WORKERS" ] && args+=("--workers" "$WORKERS");
 [ ! -z "$ROOT_PATH" ] && args+=("--root-path" "$ROOT_PATH")
 
 args+=("$APP_MODULE")

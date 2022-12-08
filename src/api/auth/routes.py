@@ -1,6 +1,6 @@
 import contextlib
 
-from fastapi import APIRouter, Depends, Form, Request, Response
+from fastapi import APIRouter, Depends, Form, Request, Response, Query
 from fastapi.responses import RedirectResponse
 
 from crud.schema import BaseApiOut
@@ -26,11 +26,11 @@ async def userinfo(request: Request):
 
 @router.get("/logout", description="Logout", response_model=BaseApiOut)
 @auth.requires()
-async def user_logout(request: Request):
+async def user_logout(request: Request, redirect_url: str = Query("/")):
     token_value = request.auth.backend.get_user_token(request)
     with contextlib.suppress(Exception):
         await auth.backend.token_store.destroy_token(token=token_value)
-    response = RedirectResponse(url="/")
+    response = RedirectResponse(url=redirect_url)
     response.delete_cookie("Authorization")
     return response
 
