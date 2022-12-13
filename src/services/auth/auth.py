@@ -16,7 +16,7 @@ from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.websockets import WebSocket
 
-from services.database import async_engine
+from services.database import auth_async_engine
 
 from .backends.base import BaseTokenStore
 from .backends.db import DbTokenStore
@@ -221,4 +221,4 @@ class Auth(Generic[_UserModelT]):
         return user
 
 
-auth = Auth(db=AsyncSession(async_engine))
+auth = Auth(db=AsyncSession(auth_async_engine))

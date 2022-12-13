@@ -7,30 +7,24 @@ from sqlmodel import Session, create_engine
 
 from settings import settings
 
-url = URL.create(
-    drivername=settings.db_driver,
-    username=settings.db_user,
-    password=settings.db_password,
-    host=settings.db_host,
-    port=settings.db_port,
-    database=settings.db_name,
+
+#######
+# Auth
+#######
+
+auth_url = URL.create(
+    drivername=settings.db_auth_driver,
+    username=settings.db_auth_user,
+    password=settings.db_auth_password,
+    host=settings.db_auth_host,
+    port=settings.db_auth_port,
+    database=settings.db_auth_name,
 )
 
-engine: Engine = create_engine(url)
+auth_async_engine: AsyncEngine = create_async_engine(auth_url, future=True)
 
-async_engine: AsyncEngine = create_async_engine(url, future=True)
-
-def gen_session(auto_commit=True) -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        try:
-            yield session
-            if auto_commit:
-                session.commit()
-        except:
-            session.rollback()
-
-async def gen_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
-    async with AsyncSession(async_engine) as session:
+async def gen_auth_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
+    async with AsyncSession(auth_async_engine) as session:
         try:
             yield session
             if auto_commit:
@@ -39,9 +33,27 @@ async def gen_async_session(auto_commit=True) -> Generator[AsyncSession, None, N
             await session.rollback()
 
 
-def get_session() -> Session:
-    return Session(engine)
+############
+# Scheduler
+############
 
 
-async def get_async_session() -> AsyncSession:
-    return AsyncSession(async_engine)
+scheduler_url = URL.create(
+    drivername=settings.db_scheduler_driver,
+    username=settings.db_scheduler_user,
+    password=settings.db_scheduler_password,
+    host=settings.db_scheduler_host,
+    port=settings.db_scheduler_port,
+    database=settings.db_scheduler_name,
+)
+
+scheduler_async_engine: AsyncEngine = create_async_engine(scheduler_url, future=True)
+
+async def gen_scheduler_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
+    async with AsyncSession(scheduler_async_engine) as session:
+        try:
+            yield session
+            if auto_commit:
+                await session.commit()
+        except:
+            await session.rollback()

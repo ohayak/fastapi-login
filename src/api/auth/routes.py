@@ -6,7 +6,6 @@ from fastapi.responses import RedirectResponse
 from crud.schema import BaseApiOut
 from crud.utils import schema_create_by_schema
 from services.auth import auth
-from services.database import AsyncSession, async_engine
 
 from .schemas import UserLoginOut, UserInfo
 

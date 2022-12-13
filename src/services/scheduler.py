@@ -9,6 +9,8 @@ from typing import Generator, Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from settings import settings
 
+from services.database import scheduler_async_engine
+
 class Schedule(BaseModel):
     """
     Represents a schedule on which a task will be run.
@@ -50,17 +52,8 @@ class Schedule(BaseModel):
     acquired_by: Optional[str]
     acquired_until: Optional[datetime]
 
-url = URL.create(
-    drivername=settings.db_driver,
-    username=settings.db_user,
-    password=settings.db_password,
-    host=settings.db_host,
-    port=settings.db_port,
-    database=settings.db_name,
-)
-engine = create_async_engine(url)
-data_store = AsyncSQLAlchemyDataStore(engine)
-event_broker = AsyncpgEventBroker.from_async_sqla_engine(engine)
+data_store = AsyncSQLAlchemyDataStore(scheduler_async_engine)
+event_broker = AsyncpgEventBroker.from_async_sqla_engine(scheduler_async_engine)
 
 async def gen_scheduler() -> Generator[AsyncScheduler, None, None]:
     async with AsyncScheduler(data_store, event_broker) as scheduler:

@@ -28,7 +28,7 @@ from services.auth.models import *
 
 target_metadata = SQLModel.metadata
 
-from services.database import async_engine
+from services.database import auth_async_engine
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -75,7 +75,7 @@ async def run_migrations_online() -> None:
 
     """
 
-    async with async_engine.connect() as connection:
+    async with auth_async_engine.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
 
