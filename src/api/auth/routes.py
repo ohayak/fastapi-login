@@ -8,14 +8,12 @@ from crud.utils import schema_create_by_schema
 from services.auth import auth
 from services.database import AsyncSession, async_engine
 
-from .schemas import UserLoginOut
+from .schemas import UserLoginOut, UserInfo
 
 router = APIRouter(prefix="/auth")
 
 
 router.dependencies.insert(0, Depends(auth.backend.authenticate))
-
-UserInfo = schema_create_by_schema(auth.user_model, "UserInfo", exclude={"password"})
 
 
 @router.get("/userinfo", description="User Profile", response_model=BaseApiOut[UserInfo])

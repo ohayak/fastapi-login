@@ -20,19 +20,23 @@ engine: Engine = create_engine(url)
 
 async_engine: AsyncEngine = create_async_engine(url, future=True)
 
-
-def gen_session(auto_commit=True) -> Generator[Session, Any, None]:
+def gen_session(auto_commit=True) -> Generator[Session, None, None]:
     with Session(engine) as session:
-        yield session
-        if auto_commit:
-            session.commit()
+        try:
+            yield session
+            if auto_commit:
+                session.commit()
+        except:
+            session.rollback()
 
-
-async def gen_async_session(auto_commit=True) -> Generator[AsyncSession, Any, None]:
-    with AsyncSession(async_engine, expire_on_commit=False) as session:
-        yield session
-        if auto_commit:
-            session.commit()
+async def gen_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
+    async with AsyncSession(async_engine) as session:
+        try:
+            yield session
+            if auto_commit:
+                await session.commit()
+        except:
+            await session.rollback()
 
 
 def get_session() -> Session:
@@ -40,4 +44,4 @@ def get_session() -> Session:
 
 
 async def get_async_session() -> AsyncSession:
-    return AsyncSession(async_engine, expire_on_commit=False)
+    return AsyncSession(async_engine)

@@ -111,11 +111,11 @@ def upgrade() -> None:
         [
             {
                 "id": 1,
-                "username": "admin",
+                "username": "admin@bib.fr",
                 "is_active": True,
                 "fullname": "Admin",
                 "password": "$2b$12$0KXG1sQknJsMYxKNlZp8JuSxSEOofiE3HRROx1DlArkO0jWSc8sP2",  # password: admin
-                "email": "admin@bib-batteries.fr",
+                "email": "admin@bib.fr",
                 "create_time": datetime.now(),
             }
         ],
