@@ -1,15 +1,17 @@
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.engine.url import URL
+from datetime import datetime, timedelta
+from typing import Any, Dict, Generator, List, Optional
+
+from apscheduler import CoalescePolicy
 from apscheduler.datastores.async_sqlalchemy import AsyncSQLAlchemyDataStore
 from apscheduler.eventbrokers.asyncpg import AsyncpgEventBroker
 from apscheduler.schedulers.async_ import AsyncScheduler
-from apscheduler import CoalescePolicy
 from pydantic import BaseModel
-from typing import Generator, Dict, List, Optional, Any
-from datetime import datetime, timedelta
-from settings import settings
+from sqlalchemy.engine.url import URL
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from services.database import scheduler_async_engine
+from settings import settings
+
 
 class Schedule(BaseModel):
     """
@@ -52,8 +54,10 @@ class Schedule(BaseModel):
     acquired_by: Optional[str]
     acquired_until: Optional[datetime]
 
+
 data_store = AsyncSQLAlchemyDataStore(scheduler_async_engine)
 event_broker = AsyncpgEventBroker.from_async_sqla_engine(scheduler_async_engine)
+
 
 async def gen_scheduler() -> Generator[AsyncScheduler, None, None]:
     async with AsyncScheduler(data_store, event_broker) as scheduler:

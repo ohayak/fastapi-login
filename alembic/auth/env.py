@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.abspath("src"))
 
 import asyncio
@@ -8,7 +9,6 @@ from logging.config import fileConfig
 from sqlalchemy.engine import Connection
 
 from alembic import context
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

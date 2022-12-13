@@ -1,5 +1,3 @@
-from typing import Literal
-
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
@@ -7,9 +5,8 @@ from sqlalchemy.engine.url import URL
 
 from api.jobs.models import JobModel, JobUpdate
 from crud.schema import BaseApiOut, ItemListSchema, Paginator
-from services.scheduler import AsyncScheduler, gen_scheduler, Schedule
+from services.scheduler import AsyncScheduler, Schedule, gen_scheduler
 from settings import settings
-
 
 router = APIRouter(prefix="/jobs")
 

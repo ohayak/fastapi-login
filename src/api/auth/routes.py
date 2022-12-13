@@ -1,13 +1,13 @@
 import contextlib
 
-from fastapi import APIRouter, Depends, Form, Request, Response, Query
+from fastapi import APIRouter, Depends, Form, Query, Request, Response
 from fastapi.responses import RedirectResponse
 
 from crud.schema import BaseApiOut
 from crud.utils import schema_create_by_schema
 from services.auth import auth
 
-from .schemas import UserLoginOut, UserInfo
+from .schemas import UserInfo, UserLoginOut
 
 router = APIRouter(prefix="/auth")
 

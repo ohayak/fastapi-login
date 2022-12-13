@@ -1,14 +1,17 @@
 from typing import List, Optional
+
 from pydantic import BaseModel, EmailStr, Field, SecretStr, validator
 
 from services.auth.models import User
 
 
 class UserInfo(User):
-    roles_: Optional[List[str]] = Field(alias='roles')
-    groups_: Optional[List[str]] = Field(alias='groups')
+    roles_: Optional[List[str]] = Field(alias="roles")
+    groups_: Optional[List[str]] = Field(alias="groups")
+
     class Config:
-        fields = {'password': {'exclude': True}}
+        fields = {"password": {"exclude": True}}
+
 
 class UserLoginOut(BaseModel):
     """User login information"""

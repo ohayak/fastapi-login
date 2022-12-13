@@ -1,4 +1,4 @@
-from typing import Any, Generator
+from typing import Generator
 
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -6,7 +6,6 @@ from sqlalchemy.future import Engine
 from sqlmodel import Session, create_engine
 
 from settings import settings
-
 
 #######
 # Auth
@@ -22,6 +21,7 @@ auth_url = URL.create(
 )
 
 auth_async_engine: AsyncEngine = create_async_engine(auth_url, future=True)
+
 
 async def gen_auth_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
     async with AsyncSession(auth_async_engine) as session:
@@ -48,6 +48,7 @@ scheduler_url = URL.create(
 )
 
 scheduler_async_engine: AsyncEngine = create_async_engine(scheduler_url, future=True)
+
 
 async def gen_scheduler_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
     async with AsyncSession(scheduler_async_engine) as session:

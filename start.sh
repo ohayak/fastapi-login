@@ -26,7 +26,7 @@ do
     cmd=${cmd:+$cmd }$e
 done
 
-if [ ! -z "$DB_MIGRATE" ]; then
+if [ ! -z "$DB_AUTH_MIGRATE" ]; then
     alembic -c alembic/auth/conf.ini upgrade heads
 fi
 

@@ -7,9 +7,8 @@ from pydantic import BaseConfig, BaseModel, Extra
 from pydantic.fields import ModelField
 from pydantic.main import ModelMetaclass
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-
+from sqlalchemy.orm import Session
 
 from .schema import BaseApiSchema
 
