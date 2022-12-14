@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, List, Optional, Sequence, Union
 
-from pydantic import BaseModel, EmailStr, SecretStr
+from pydantic import BaseModel, SecretStr
 from sqlalchemy import and_, func
 from sqlalchemy.sql.selectable import Exists
 from sqlmodel import Field, Relationship, Session, SQLModel, select
@@ -76,9 +76,7 @@ class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True, nullable=False)
     username: str = Field(max_length=32, unique=True, index=True, nullable=False)
     is_active: bool = Field(default=True)
-    fullname: str = Field(None, max_length=64)
     password: PasswordStr = Field(max_length=128, nullable=False)
-    email: EmailStr = Field(None, index=True, nullable=True)
     create_time: datetime = Field(default_factory=datetime.now)
     update_time: Optional[datetime] = Field(
         default_factory=datetime.now,
@@ -91,10 +89,6 @@ class User(SQLModel, table=True):
     @property
     def is_authenticated(self) -> bool:
         return self.is_active
-
-    @property
-    def display_name(self) -> str:
-        return self.fullname or self.username
 
     @property
     def identity(self) -> str:

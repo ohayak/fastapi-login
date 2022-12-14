@@ -7,6 +7,8 @@ from sqlmodel import Session, create_engine
 
 from settings import settings
 
+import logging
+
 #######
 # Auth
 #######
@@ -30,6 +32,7 @@ async def gen_auth_async_session(auto_commit=True) -> Generator[AsyncSession, No
             if auto_commit:
                 await session.commit()
         except:
+            logging.error("something went wrong with SQL transaction, rolling back.")
             await session.rollback()
 
 
@@ -57,4 +60,33 @@ async def gen_scheduler_async_session(auto_commit=True) -> Generator[AsyncSessio
             if auto_commit:
                 await session.commit()
         except:
+            logging.error("something went wrong with SQL transaction, rolling back.")
+            await session.rollback()
+
+
+############
+# Data
+############
+
+
+scheduler_url = URL.create(
+    drivername=settings.db_data_driver,
+    username=settings.db_data_user,
+    password=settings.db_data_password,
+    host=settings.db_data_host,
+    port=settings.db_data_port,
+    database=settings.db_data_name,
+)
+
+data_async_engine: AsyncEngine = create_async_engine(scheduler_url, future=True)
+
+
+async def gen_data_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
+    async with AsyncSession(data_async_engine) as session:
+        try:
+            yield session
+            if auto_commit:
+                await session.commit()
+        except:
+            logging.error("something went wrong with SQL transaction, rolling back.")
             await session.rollback()

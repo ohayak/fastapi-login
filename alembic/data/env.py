@@ -24,13 +24,12 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 
-from services.auth.models import *
-from models.entities import *
+from models.batteries import *
 
 
 target_metadata = SQLModel.metadata
 
-from services.database import auth_async_engine as async_engine
+from services.database import data_async_engine as async_engine
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

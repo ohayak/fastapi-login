@@ -64,9 +64,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("username", sqlmodel.sql.sqltypes.AutoString(length=32), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False),
-        sa.Column("fullname", sqlmodel.sql.sqltypes.AutoString(length=64), nullable=True),
         sa.Column("password", sqlmodel.sql.sqltypes.AutoString(length=128), nullable=False),
-        sa.Column("email", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("create_time", sa.DateTime(), nullable=False),
         sa.Column("update_time", sa.DateTime(), server_default=sa.text("now()"), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -113,9 +111,7 @@ def upgrade() -> None:
                 "id": 1,
                 "username": "admin@bib.fr",
                 "is_active": True,
-                "fullname": "Admin",
                 "password": "$2b$12$0KXG1sQknJsMYxKNlZp8JuSxSEOofiE3HRROx1DlArkO0jWSc8sP2",  # password: admin
-                "email": "admin@bib.fr",
                 "create_time": datetime.now(),
             }
         ],
@@ -127,8 +123,20 @@ def upgrade() -> None:
             {
                 "id": 1,
                 "key": "admin",
-                "name": "Admin",
-                "desc": "Admin",
+                "name": "Administrator",
+                "desc": "Has all permissions",
+            },
+            {
+                "id": 2,
+                "key": "manager",
+                "name": "Manager",
+                "desc": "Has access to all fleets",
+            },
+            {
+                "id": 3,
+                "key": "operator",
+                "name": "Operator",
+                "desc": "Has access to one fleet",
             }
         ],
     )
@@ -149,8 +157,8 @@ def upgrade() -> None:
             {
                 "id": 1,
                 "key": "admin",
-                "name": "Admin",
-                "desc": "Admin",
+                "name": "Administrators",
+                "desc": "Users with Administrator role",
             }
         ],
     )
@@ -185,7 +193,6 @@ def downgrade() -> None:
     op.drop_table("auth_role_permissions")
     op.drop_table("auth_group_roles")
     op.drop_index(op.f("ix_auth_user_username"), table_name="auth_user")
-    op.drop_index(op.f("ix_auth_user_email"), table_name="auth_user")
     op.drop_table("auth_user")
     op.drop_index(op.f("ix_auth_token_token"), table_name="auth_token")
     op.drop_table("auth_token")

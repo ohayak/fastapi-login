@@ -30,5 +30,9 @@ if [ ! -z "$DB_AUTH_MIGRATE" ]; then
     alembic -c alembic/auth/conf.ini upgrade heads
 fi
 
+if [ ! -z "$DB_DATA_MIGRATE" ]; then
+    alembic -c alembic/data/conf.ini upgrade heads
+fi
+
 echo "Running server: $cmd"
 exec $cmd

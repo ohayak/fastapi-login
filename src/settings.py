@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     db_scheduler_port: int = Field(default=5432)
     db_scheduler_name: str = Field(default="scheduler")
 
+    db_data_echo: str = Field(default=None)
+    db_data_driver: str = Field(default="postgresql+asyncpg")
+    db_data_migrate: bool = Field(default=False)
+    db_data_user: str = Field(default="data")
+    db_data_password: str = Field(default="data")
+    db_data_host: str = Field(default="localhost")
+    db_data_port: int = Field(default=5432)
+    db_data_name: str = Field(default="data")
+
     # Server settings
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000)
