@@ -8,6 +8,10 @@ from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.types import JSON
 
 
+class BatteryCompany(SQLModel, table=True):
+    __tablename__ = "battery_company"
+    id: int = Field(primary_key=True)
+    name: str = Field(max_length=32)
 
 class BatteryModel(SQLModel, table=True):
     __tablename__ = "battery_model"
@@ -46,6 +50,7 @@ class BatteryInfo(SQLModel, table=True):
     name: str = Field(max_length=32)
     external_id: str = Field(max_length=32)
     battery_id: int = Field(foreign_key="battery_model.id")
-    company: str = Field(max_length=32)
+    company_id: int = Field(foreign_key="battery_company.id")
 
     model: BatteryModel = Relationship(link_model=BatteryModel)
+    company: BatteryCompany = Relationship(link_model=BatteryCompany)

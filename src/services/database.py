@@ -26,7 +26,7 @@ auth_async_engine: AsyncEngine = create_async_engine(auth_url, future=True)
 
 
 async def gen_auth_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
-    async with AsyncSession(auth_async_engine) as session:
+    async with AsyncSession(auth_async_engine, expire_on_commit=False) as session:
         try:
             yield session
             if auto_commit:
@@ -54,7 +54,7 @@ scheduler_async_engine: AsyncEngine = create_async_engine(scheduler_url, future=
 
 
 async def gen_scheduler_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
-    async with AsyncSession(scheduler_async_engine) as session:
+    async with AsyncSession(scheduler_async_engine, expire_on_commit=False) as session:
         try:
             yield session
             if auto_commit:
@@ -69,7 +69,7 @@ async def gen_scheduler_async_session(auto_commit=True) -> Generator[AsyncSessio
 ############
 
 
-scheduler_url = URL.create(
+data_url = URL.create(
     drivername=settings.db_data_driver,
     username=settings.db_data_user,
     password=settings.db_data_password,
@@ -78,11 +78,11 @@ scheduler_url = URL.create(
     database=settings.db_data_name,
 )
 
-data_async_engine: AsyncEngine = create_async_engine(scheduler_url, future=True)
+data_async_engine: AsyncEngine = create_async_engine(data_url, future=True)
 
 
 async def gen_data_async_session(auto_commit=True) -> Generator[AsyncSession, None, None]:
-    async with AsyncSession(data_async_engine) as session:
+    async with AsyncSession(data_async_engine, expire_on_commit=False) as session:
         try:
             yield session
             if auto_commit:
