@@ -71,14 +71,14 @@ class Auth(Generic[_UserModelT]):
         if user:
             pwd = password.get_secret_value() if isinstance(password, SecretStr) else password
             pwd2 = user.password.get_secret_value() if isinstance(user.password, SecretStr) else user.password
-            if self.pwd_context.verify(pwd, pwd2):  # 用户存在 且 密码验证通过
+            if self.pwd_context.verify(pwd, pwd2):
                 return user
         return None
 
     @cached_property
     def get_current_user(self):
         async def _get_current_user(request: Request) -> Optional[_UserModelT]:
-            if request.scope.get("auth"):  # 防止重复授权
+            if request.scope.get("auth"):
                 return request.scope.get("user")
             request.scope["auth"], request.scope["user"] = self, None
             token = self.backend.get_user_token(request)
@@ -117,7 +117,7 @@ class Auth(Generic[_UserModelT]):
             if user_auth is None:
                 request.scope["__user_auth__"] = {}
             cache_key = (groups_, roles_, permissions_)
-            if cache_key not in request.scope["__user_auth__"]:  # 防止重复授权
+            if cache_key not in request.scope["__user_auth__"]:
                 if isinstance(user, params.Depends):
                     user = await self.get_current_user(request)
                 result = await has_requires(user)
@@ -207,7 +207,6 @@ class Auth(Generic[_UserModelT]):
             user = self.user_model(
                 username=role_key,
                 password=self.pwd_context.hash(role_key),
-                email=f"{role_key}@mail.com",  # type:ignore
                 roles=[role],
             )
             session.add(user)
@@ -221,4 +220,4 @@ class Auth(Generic[_UserModelT]):
         return user
 
 
-auth = Auth(db=AsyncSession(auth_async_engine))
+auth = Auth(db=AsyncSession(auth_async_engine, expire_on_commit=False))
