@@ -25,7 +25,7 @@ class UserRegIn(BaseModel):
 
     username: str = Field(max_length=32, unique=True, index=True, nullable=False)
     password: SecretStr = Field(max_length=128, nullable=False)
-    email: EmailStr = Field(None, index=True, nullable=True)
+    email: EmailStr = Field(None, index=True, nullable=True, unique_items=True)
     password2: str = Field(max_length=128)
 
     @validator("password2")
