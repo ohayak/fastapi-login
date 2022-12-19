@@ -5,9 +5,12 @@ from fastapi.responses import RedirectResponse
 from passlib.context import CryptContext
 from sqlmodel import select
 
+import api.auth.routes
 from api.auth.schemas import UserRegIn
+from api.users.schemas import NewUserForm
 from crud.schema import BaseApiOut
 from crud.utils import schema_create_by_schema
+from models.entities import UserDetails
 from services.auth import auth
 from services.auth.models import User, Role, Group
 from services.database import AsyncSession, gen_auth_async_session
@@ -16,37 +19,33 @@ router = APIRouter(prefix="/users")
 
 router.dependencies.insert(0, Depends(auth.backend.authenticate))
 
-UserInfo = schema_create_by_schema(auth.user_model, "UserInfo", exclude={"password"})
 
-
-@router.post("/register", description="Registration", response_model=BaseApiOut[UserInfo])
+@router.post("/user", response_model=BaseApiOut[UserDetails])
 @auth.requires(roles=['admin'])
-async def register(request: Request, response: Response, payload: UserRegIn = Body(...),
+async def register(request: Request, payload: NewUserForm = Body(...),
                    db: AsyncSession = Depends(gen_auth_async_session)):
-    try:
-        new_user = User(username=payload.username,
-                        password=CryptContext(schemes=["bcrypt"], deprecated="auto").hash(payload.password))
-        user = UserInfo(**new_user.dict())
-        db.add(payload)
-        await db.flush()
-        return BaseApiOut(data=user)
-    except:
-        raise HTTPException(status_code=409, detail="This email already registered")
+    new_auth_user = api.auth.routes.register(request, payload, db)
+    new_user = UserDetails(
+        id=new_auth_user.id,
+        email=payload.email,
+        lastname=payload.lastname
+    )
+    db.add(new_user)
+    return BaseApiOut(data=new_user)
 
 
-# @router.get("/users", description="list_of_users", response_model=BaseApiOut[UserInfo])
-@router.get("/users", description="list_of_users", response_model=list[UserInfo])
-@auth.requires(roles=['admin'])
+@router.get("/users", description="list_of_users", response_model=list[UserDetails])
+# @auth.requires(roles=['admin'])
 async def users_list(request: Request, response: Response, db: AsyncSession = Depends(gen_auth_async_session)):
-    query = await db.execute(select(User).order_by(User.id))
+    query = await db.execute(select(UserDetails).order_by(UserDetails.id))
     return query.scalars().all()
 
 
-@router.delete("/users/{user_id}", description="delete_user_by_id", response_model=BaseApiOut[UserInfo])
+@router.delete("/users/{user_id}", description="delete_user_by_id", response_model=BaseApiOut[UserDetails])
 @auth.requires(roles=['admin'])
 async def remove_user(request: Request, response: Response, user_id: int, db=Depends(gen_auth_async_session)):
     try:
-        query = db.execute(select(User).where(User.id == user_id))
+        query = db.execute(select(UserDetails).where(UserDetails.id == user_id))
         user = query.one()
         db.delete(user)
         return user
@@ -54,11 +53,11 @@ async def remove_user(request: Request, response: Response, user_id: int, db=Dep
         raise HTTPException(status_code=409, detail="user not exist")
 
 
-@router.patch("/users/{user_id}", description="update_user_by_id", response_model=BaseApiOut[UserInfo])
+@router.patch("/users/{user_id}", description="update_user_by_id", response_model=BaseApiOut[UserDetails])
 @auth.requires(roles=['admin'])
 async def update_user_info(request: Request, response: Response, user_id: int, payload: UserRegIn = Body(...),
                            db=Depends(gen_auth_async_session)):
-    query = db.execute(select(User).where(User.id == user_id))
+    query = db.execute(select(UserDetails).where(UserDetails.id == user_id))
     user_current_data = query.one()
     new_data = payload.dict(exclude_unset=True)
     new_user_data = user_current_data.copy(update=new_data)
@@ -127,13 +126,13 @@ async def get_groups(request: Request, response: Response, db: AsyncSession = De
 
 @router.delete("/groups/{group_id}", description="remove_group_by_id)", response_model=Group)
 @auth.requires(roles=['admin'])
-async def remove_groups(request: Request, response: Response, group_id :int, db=Depends(gen_auth_async_session)):
+async def remove_groups(request: Request, response: Response, group_id: int, db=Depends(gen_auth_async_session)):
     try:
         query = db.execute(select(Role).where(Role.id == group_id))
-        role = query.one()
-        db.delete(role)
+        group = query.one()
+        db.delete(group)
         db.commit()
         db.refresh(Group)
-        return role
+        return group
     except:
         HTTPException(status_code=407, detail=f"group with  id :{group_id} not exist")

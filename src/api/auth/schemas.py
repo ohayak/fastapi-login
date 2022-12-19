@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr, validator
 
-from services.auth.models import User
+from services.auth.models import User, PasswordStr
 
 
 class UserInfo(User):
@@ -23,9 +23,8 @@ class UserLoginOut(BaseModel):
 class UserRegIn(BaseModel):
     """User registration information"""
 
-    username: str = Field(max_length=32, unique=True, index=True, nullable=False)
-    password: SecretStr = Field(max_length=128, nullable=False)
-    email: EmailStr = Field(None, index=True, nullable=True, unique_items=True)
+    username: str = Field(max_length=32)
+    password: PasswordStr = Field(max_length=128)
     password2: str = Field(max_length=128)
 
     @validator("password2")

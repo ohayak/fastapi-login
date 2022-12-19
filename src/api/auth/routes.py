@@ -1,13 +1,16 @@
 import contextlib
 
-from fastapi import APIRouter, Depends, Form, Query, Request, Response
+from fastapi import APIRouter, Depends, Form, Query, Request, Response, Body, HTTPException
 from fastapi.responses import RedirectResponse
+from passlib.context import CryptContext
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from crud.schema import BaseApiOut
 from crud.utils import schema_create_by_schema
 from services.auth import auth
-
-from .schemas import UserInfo, UserLoginOut
+from services.auth.models import User
+from services.database import gen_auth_async_session
+from .schemas import UserInfo, UserLoginOut, UserRegIn
 
 router = APIRouter(prefix="/auth")
 
@@ -42,3 +45,15 @@ async def oauth_token(request: Request, response: Response, username: str = Form
     token_info.access_token = await request.auth.backend.token_store.write_token(request.user.dict())
     response.set_cookie("Authorization", f"bearer {token_info.access_token}")
     return BaseApiOut(data=token_info)
+
+
+# @router.post("/register", description="OAuth2 Token", response_model=BaseApiOut[UserLoginOut])
+async def register(request: Request, payload: UserRegIn = Body(...), db: AsyncSession = Depends(gen_auth_async_session)):
+    result = await db.scalar(db.select(User).where(User.username == payload.username))
+    if result:
+        raise HTTPException(status_code=409, detail=f"{payload.username} already exits")
+
+    new_user = User(username=payload.username,
+        password=CryptContext(schemes=["bcrypt"], deprecated="auto").hash(payload.password))
+
+    return BaseApiOut(data=new_user)
