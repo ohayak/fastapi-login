@@ -4,22 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from settings import settings
 
-# hypercorn logging format
-logging.basicConfig(
-    level=settings.log_level,
-    format="[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S %z",
-)
 
-from api.auth.routes import router as auth_router
-from api.jobs.routes import router as jobs_router
-from api.users.routes import router as users_router
+from api import router
 
 app = FastAPI(title="bib-api", version="0.0.1", root_path=settings.root_path)
-
-app.include_router(router=auth_router)
-app.include_router(router=jobs_router)
-app.include_router(router=users_router)
+app.include_router(router)
 
 
 @app.get("/")

@@ -36,9 +36,11 @@ parse_params() {
 }
 
 main() {
-    [[ $dotenv > 0 ]] && set -a; source .env; set +a;
+    if  [[ $dotenv > 0 ]]; then 
+      set -a; source .env; set +a;
+    fi
 
-    APP_MODULE=${APP_MODULE:-src/app:app}
+    APP_MODULE=${APP_MODULE:-src/main:app}
     HOST=${HOST:-0.0.0.0}
     PORT=${PORT:-8000}
     LOG_LEVEL=${LOG_LEVEL:-info}
