@@ -43,9 +43,9 @@ class UserDetails(SQLModel, table=True):
         sa_column_kwargs={"onupdate": func.now(), "server_default": func.now()},
     )
     
-    auth: User = Relationship(link_model=User)
-    job: UserJob = Relationship(link_model=UserJob)
-    company: Company = Relationship(link_model=Company)
+    auth: User = Relationship()
+    job: UserJob = Relationship()
+    company: Company = Relationship()
     
     class Config:
         arbitrary_types_allowed = True
