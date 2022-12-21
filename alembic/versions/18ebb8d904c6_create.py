@@ -69,7 +69,6 @@ def upgrade() -> None:
         sa.Column("update_time", sa.DateTime(), server_default=sa.text("now()"), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_auth_user_email"), "auth_user", ["email"], unique=False)
     op.create_index(op.f("ix_auth_user_username"), "auth_user", ["username"], unique=True)
     auth_group_roles = op.create_table(
         "auth_group_roles",

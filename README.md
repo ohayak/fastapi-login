@@ -22,14 +22,13 @@ conda env update -f conda-env.yaml
 conda env update -f conda-env-dev.yaml
 ```
 
-### Applying migrations and startup
+## Applying migrations and startup
 
 Before running the application don't forget to apply pending migrations.
 You can apply migrations manualy:
 
 ```bash
-# Migration
-[dotenv run] alembic upgrade head
+[dotenv run] alembic upgrade heads
 ```
 
 Or automaticly, by setting environment variable `DB_MIGRATE=true`  or just apppend `--migrate` option to `./start.sh` command
@@ -76,3 +75,12 @@ ERRORLOG=true
 ```
 
 /!\ `.env` file contains sensible informations like database IP and passwords, never push this file to git repository.
+
+## How to build images
+
+The easiest way if to push a tag to git and Bitbucket Pipelines will create a new image and push it. If you want to do this step your self, just execute comands defined on the `bitbucket-pipelines.yaml` in your machine
+
+## Bitbucket pipelines
+
+Please refer to `bitbucket-pipelines.yaml` and Bitbucket pipelines documentation
+/!\ Environment variables used in the pipeline, are defined via the web interface manually. Check [Repository varaibles](https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/)

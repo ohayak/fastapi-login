@@ -2,26 +2,53 @@ version: "3"
 
 volumes:
   data:
+  auth:
+  sched:
   cache:
 services:
-  pgsql:
+  dbauth:
     image: postgres:14.0
-    container_name: pgsql
+    container_name: dbauth
     environment:
-      - POSTGRES_USER=bib
-      - POSTGRES_PASSWORD=bib
-      - POSTGRES_DB=bib
+      - POSTGRES_USER=auth
+      - POSTGRES_PASSWORD=auth
+      - POSTGRES_DB=auth
+    volumes:
+      - auth:/var/lib/pgsql
+  dbsched:
+    image: postgres:14.0
+    container_name: dbsched
+    environment:
+      - POSTGRES_USER=scheduler
+      - POSTGRES_PASSWORD=scheduler
+      - POSTGRES_DB=scheduler
+    volumes:
+      - sched:/var/lib/pgsql
+  dbdata:
+    image: postgres:14.0
+    container_name: dbdata
+    environment:
+      - POSTGRES_USER=data
+      - POSTGRES_PASSWORD=data
+      - POSTGRES_DB=data
     volumes:
       - data:/var/lib/pgsql
-    ports:
-      - 5432:5432
   api:
     build:
       context: .
     container_name: api
-    env_file:
-      - .env
+    environment:
+    - DB_MIGRATE=true
+    - DB_AUTH_HOST=dbauth
+    - DB_SCHEDULER_HOST=dbsched
+    - DB_DATA_HOST=dbdata
+    - LOG_LEVEL=INFO
+    - ACCESSLOG=true
+    - ERRORLOG=true
+    - RELOAD=true
     depends_on:
-      - pgsql
+      - dbdata
+      - dbauth
+      - dbsched
     ports:
       - 8000:8000
