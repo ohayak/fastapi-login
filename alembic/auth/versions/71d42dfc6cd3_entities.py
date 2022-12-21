@@ -91,6 +91,8 @@ def upgrade() -> None:
                 "id": 1,
                 "company_id": 1,
                 "firstname": "admin",
+                "lastname": "admin",
+                "fleet": {},
                 "email": "admin@bib.fr",
             }
         ],

@@ -1,13 +1,13 @@
 from typing import Generator
-
+from asyncio import current_task
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_scoped_session
-from sqlalchemy.future import Engine
 
 from settings import settings
 
 import logging
+
 
 #######
 # Auth
@@ -27,13 +27,15 @@ auth_async_engine: AsyncEngine = create_async_engine(auth_url, future=True)
 
 async def gen_auth_async_session() -> Generator[AsyncSession, None, None]:
     async_session_factory = sessionmaker(auth_async_engine, expire_on_commit=False, class_= AsyncSession)
-    async with async_scoped_session(async_session_factory) as session:
-        try:
-            yield session
-            await session.commit()
-        except:
-            logging.error("something went wrong with SQL transaction, rolling back.")
-            await session.rollback()
+    session = async_scoped_session(async_session_factory, current_task)
+    try:
+        yield session
+        await session.commit()
+    except:
+        logging.error("something went wrong with SQL transaction, rolling back.")
+        await session.rollback()
+    finally:
+        await session.close()
 
 
 ############
@@ -55,13 +57,16 @@ scheduler_async_engine: AsyncEngine = create_async_engine(scheduler_url, future=
 
 async def gen_scheduler_async_session() -> Generator[AsyncSession, None, None]:
     async_session_factory = sessionmaker(scheduler_async_engine, expire_on_commit=False, class_= AsyncSession)
-    async with async_scoped_session(async_session_factory) as session:
-        try:
-            yield session
-            await session.commit()
-        except:
-            logging.error("something went wrong with SQL transaction, rolling back.")
-            await session.rollback()
+    session = async_scoped_session(async_session_factory, current_task)
+    try:
+        yield session
+        await session.commit()
+    except:
+        logging.error("something went wrong with SQL transaction, rolling back.")
+        await session.rollback()
+    finally:
+        await session.close()
+
 
 
 ############
@@ -83,10 +88,12 @@ data_async_engine: AsyncEngine = create_async_engine(data_url, future=True)
 
 async def gen_data_async_session() -> Generator[AsyncSession, None, None]:
     async_session_factory = sessionmaker(data_async_engine, expire_on_commit=False, class_= AsyncSession)
-    async with async_scoped_session(async_session_factory) as session:
-        try:
-            yield session
-            await session.commit()
-        except:
-            logging.error("something went wrong with SQL transaction, rolling back.")
-            await session.rollback()
+    session = async_scoped_session(async_session_factory, current_task)
+    try:
+        yield session
+        await session.commit()
+    except:
+        logging.error("something went wrong with SQL transaction, rolling back.")
+        await session.rollback()
+    finally:
+        await session.close()
