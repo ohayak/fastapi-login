@@ -9,6 +9,7 @@ trap cleanup SIGINT SIGTERM ERR EXIT
 parse_params() {
   # default values of variables set from params
   dotenv=0
+  migrate=0
   param=''
 
   while :; do
@@ -16,6 +17,7 @@ parse_params() {
     # -h | --help) usage ;;
     -v | --verbose) set -x ;;
     -e | --dotenv) dotenv=1 ;;
+    -m | --migrate) migrate=1 ;;
     # example named parameter 
     # -p | --param) 
     #   param="${2-}"
@@ -49,6 +51,7 @@ main() {
     ERRORLOG=${ERRORLOG:-true}
     WORKERS=${WORKERS:-}
     ROOT_PATH=${ROOT_PATH:-}
+    DB_MIGRATE=${DB_MIGRATE:-false}
 
     chunks=("hypercorn" "--bind" "$HOST:$PORT" "--log-level" "$LOG_LEVEL")
 
@@ -64,6 +67,11 @@ main() {
     do
         cmd=${cmd:+$cmd }$e
     done
+
+    if [[ "$DB_MIGRATE" == "true" || $migrate > 0 ]]; then
+      msg "Running Almebic migration"
+      alembic upgrade heads
+    fi
 
     msg "Running server: $cmd"
     exec $cmd
