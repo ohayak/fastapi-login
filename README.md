@@ -2,7 +2,7 @@
 
 ## Quick start
 
-To run project locally you can just type `docker-compose up`
+To run project locally you can just type `docker-compose up`. First time may fail, restart.
 
 ## How to run the application
 
