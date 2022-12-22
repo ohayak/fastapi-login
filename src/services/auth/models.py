@@ -34,7 +34,10 @@ class UserRoleLink(SQLModel, table=True):
 
 class UserGroupLink(SQLModel, table=True):
     __tablename__ = "auth_user_groups"
-    user_id: int = Field(primary_key=True, foreign_key="auth_user.id")
+    user_id: int = Field(
+        primary_key=True,
+        foreign_key="auth_user.id",
+    )
     group_id: int = Field(
         primary_key=True,
         foreign_key="auth_group.id",
@@ -82,8 +85,8 @@ class User(SQLModel, table=True):
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": func.now(), "server_default": func.now()},
     )
-    roles: Optional[List["Role"]] = Relationship(link_model=UserRoleLink, back_populates="users")
-    groups: Optional[List["Group"]] = Relationship(link_model=UserGroupLink, back_populates="users")
+    roles: Optional[List["Role"]] = Relationship(link_model=UserRoleLink)
+    groups: Optional[List["Group"]] = Relationship(link_model=UserGroupLink)
 
     @property
     def is_authenticated(self) -> bool:

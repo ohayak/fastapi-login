@@ -37,7 +37,7 @@ async def user_logout(request: Request, redirect_url: str = Query("/")):
     return response
 
 
-@router.post("/token", description="OAuth2 Token", response_model=BaseApiOut[UserLoginOut])
+@router.post("/token", description="OAuth2 Token", response_model=UserLoginOut)
 async def oauth_token(request: Request, response: Response, username: str = Form(...), password: str = Form(...)):
     if request.scope.get("user") is None:
         request.scope["user"] = await request.auth.authenticate_user(username=username, password=password)
@@ -46,7 +46,7 @@ async def oauth_token(request: Request, response: Response, username: str = Form
     token_info = UserLoginOut.parse_obj(request.user)
     token_info.access_token = await request.auth.backend.token_store.write_token(request.user.dict())
     response.set_cookie("Authorization", f"bearer {token_info.access_token}")
-    return BaseApiOut(data=token_info)
+    return token_info
 
 
 # @router.post("/register", description="OAuth2 Token", response_model=BaseApiOut[UserLoginOut])

@@ -92,7 +92,7 @@ async def gen_data_async_session() -> Generator[AsyncSession, None, None]:
     try:
         yield session
         await session.commit()
-    except:
+    except Exception as e:
         logging.error("something went wrong with SQL transaction, rolling back.")
         await session.rollback()
     finally:
