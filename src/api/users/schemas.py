@@ -1,16 +1,26 @@
 from typing import List, Optional, Dict
 
-from pydantic import BaseModel, EmailStr, Field, SecretStr, validator
+from pydantic import BaseModel, EmailStr, Field, SecretStr, validator, root_validator
 
 from services.auth.models import User
 from api.auth.schemas import UserInfo, UserRegIn
 
+
 class UserInfo(User):
-    roles_: Optional[List[str]] = Field(alias="roles")
-    groups_: Optional[List[str]] = Field(alias="groups")
+    # roles: Optional[List[str]]
+    # groups: Optional[List[str]]
+    #
+    # @root_validator
+    # def set_value(cls, values):
+    #     values["roles"] = values["roles_rel"]
+    #     values["groups"] = values["groups_rel"]
+    #     return values
+
 
     class Config:
         fields = {"password": {"exclude": True}}
+
+
 
 
 class UserLoginOut(BaseModel):

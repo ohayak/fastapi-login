@@ -82,9 +82,8 @@ class User(SQLModel, table=True):
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": func.now(), "server_default": func.now()},
     )
-
-    roles: Optional[List["Role"]] = Relationship(link_model=UserRoleLink)
-    groups: Optional[List["Group"]] = Relationship(link_model=UserGroupLink)
+    roles: Optional[List["Role"]] = Relationship(link_model=UserRoleLink, back_populates="users")
+    groups: Optional[List["Group"]] = Relationship(link_model=UserGroupLink, back_populates="users")
 
     @property
     def is_authenticated(self) -> bool:
@@ -206,6 +205,7 @@ class Role(BaseRBAC, table=True):
         None,
         foreign_key="auth_role.id",
     )
+    users: List["User"] = Relationship(back_populates="roles", link_model=UserRoleLink)
     groups: List["Group"] = Relationship(back_populates="roles", link_model=GroupRoleLink)
     permissions: List["Permission"] = Relationship(back_populates="roles", link_model=RolePermissionLink)
 
@@ -215,6 +215,7 @@ class Group(BaseRBAC, table=True):
 
     __tablename__ = "auth_group"
     roles: List["Role"] = Relationship(back_populates="groups", link_model=GroupRoleLink)
+    users: List["User"] = Relationship(back_populates="groups", link_model=UserGroupLink)
 
 
 class Permission(BaseRBAC, table=True):

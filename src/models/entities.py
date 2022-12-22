@@ -10,11 +10,11 @@ from sqlalchemy.types import JSON
 from services.auth.models import User
 
 
-
 class UserJob(SQLModel, table=True):
     __tablename__ = "user_job"
     id: int = Field(primary_key=True)
     name: str = Field(max_length=32)
+
 
 class Company(SQLModel, table=True):
     __tablename__ = "company"
@@ -27,6 +27,7 @@ class Company(SQLModel, table=True):
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": func.now(), "server_default": func.now()},
     )
+
 
 class UserDetails(SQLModel, table=True):
     __tablename__ = "user"
@@ -42,11 +43,10 @@ class UserDetails(SQLModel, table=True):
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": func.now(), "server_default": func.now()},
     )
-    
+
     auth: User = Relationship()
     job: UserJob = Relationship()
     company: Company = Relationship()
-    
+
     class Config:
         arbitrary_types_allowed = True
-

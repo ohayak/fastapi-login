@@ -1,4 +1,5 @@
 import contextlib
+import logging
 
 from fastapi import APIRouter, Depends, Form, Query, Request, Response, Body, HTTPException
 from fastapi.responses import RedirectResponse
@@ -18,10 +19,11 @@ router = APIRouter(prefix="/auth")
 router.dependencies.insert(0, Depends(auth.backend.authenticate))
 
 
-@router.get("/userinfo", description="User Profile", response_model=BaseApiOut[UserInfo])
+@router.get("/userinfo", description="User Profile", response_model=User)
 @auth.requires()
 async def userinfo(request: Request):
-    return BaseApiOut(data=request.user)
+    logging.debug(request.user)
+    return request.user
 
 
 @router.get("/logout", description="Logout", response_model=BaseApiOut)
@@ -48,7 +50,8 @@ async def oauth_token(request: Request, response: Response, username: str = Form
 
 
 # @router.post("/register", description="OAuth2 Token", response_model=BaseApiOut[UserLoginOut])
-async def register(request: Request, payload: UserRegIn = Body(...), db: AsyncSession = Depends(gen_auth_async_session)):
+async def register(request: Request, payload: UserRegIn, db: AsyncSession = Depends(gen_auth_async_session)):
+    print(payload)
     result = await db.scalar(db.select(User).where(User.username == payload.username))
     if result:
         raise HTTPException(status_code=409, detail=f"{payload.username} already exits")

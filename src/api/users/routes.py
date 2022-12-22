@@ -1,4 +1,5 @@
 import contextlib
+import logging
 
 from fastapi import APIRouter, Depends, Form, Request, Response, Body, HTTPException
 from fastapi.responses import RedirectResponse
@@ -6,7 +7,7 @@ from passlib.context import CryptContext
 from sqlmodel import select
 
 import api.auth.routes
-from api.auth.schemas import UserRegIn
+from api.auth.schemas import UserRegIn, UserInfo
 from api.users.schemas import NewUserForm
 from crud.schema import BaseApiOut
 from crud.utils import schema_create_by_schema
@@ -22,8 +23,10 @@ router.dependencies.insert(0, Depends(auth.backend.authenticate))
 
 @router.post("/user", response_model=BaseApiOut[UserDetails])
 @auth.requires(roles=['admin'])
-async def register(request: Request, payload: NewUserForm = Body(...),
+async def register(request: Request,
+                   payload: NewUserForm,
                    db: AsyncSession = Depends(gen_auth_async_session)):
+    print(payload)
     new_auth_user = api.auth.routes.register(request, payload, db)
     new_user = UserDetails(
         id=new_auth_user.id,
@@ -35,10 +38,25 @@ async def register(request: Request, payload: NewUserForm = Body(...),
 
 
 @router.get("/users", description="list_of_users", response_model=list[UserDetails])
-# @auth.requires(roles=['admin'])
+@auth.requires(roles=['admin'])
 async def users_list(request: Request, response: Response, db: AsyncSession = Depends(gen_auth_async_session)):
     query = await db.execute(select(UserDetails).order_by(UserDetails.id))
     return query.scalars().all()
+
+
+@router.get("/user/{user_id}", description="select_user_id", response_model=UserInfo)
+@auth.requires(roles=['admin'])
+async def user_info(request: Request, response: Response, user_id: int,
+                    db: AsyncSession = Depends(gen_auth_async_session)):
+    try:
+        user = await db.get(User, user_id)
+        roles = get_roles(request=request, response=response, db=db)
+        logging.debug(roles)
+        userinfo = UserInfo(id=user.id, username=user.username, create_time=user.create_time,
+                            update_time=user.update_time, password=user.password, roles_rel=roles)
+        return userinfo
+    except:
+        raise HTTPException(status_code=403, detail="user not exist")
 
 
 @router.delete("/users/{user_id}", description="delete_user_by_id", response_model=BaseApiOut[UserDetails])
@@ -87,7 +105,7 @@ async def create_role(request: Request, response: Response, payload: Role = Body
 @auth.requires(roles=['admin'])
 async def get_roles(request: Request, response: Response, db: AsyncSession = Depends(gen_auth_async_session)):
     query = await db.execute(select(Role).order_by(Role.id))
-    return query.scalars().all()
+    return list(query.scalars().all())
 
 
 @router.delete("/roles/{role_id}", description="remove_role_by_id)", response_model=Role)
