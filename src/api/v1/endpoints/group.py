@@ -9,6 +9,7 @@ from models.group_model import Group
 from models.user_model import User
 from schemas.group_schema import IGroupCreate, IGroupRead, IGroupReadWithUsers, IGroupUpdate
 from schemas.response_schema import (
+    IDeleteResponseBase,
     IGetResponseBase,
     IGetResponsePaginated,
     IPostResponseBase,
@@ -49,7 +50,7 @@ async def get_group_by_id(
 
 
 @router.post(
-    "create group",
+    "",
     response_model=IPostResponseBase[IGroupRead],
     status_code=status.HTTP_201_CREATED,
 )
@@ -127,3 +128,18 @@ async def remove_user_from_group(
 
     group = await crud.group.remove_user_from_group(user=user, group_id=group_id)
     return create_response(message="User removed from group", data=group)
+
+
+@router.delete("/{group_id}", response_model=IDeleteResponseBase[IGroupRead])
+async def remove_group(
+    group_id: UUID,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+):
+    """
+    Deletes a group by id
+    """
+    group = await crud.group.get(id=group_id)
+    if not group:
+        raise IdNotFoundException(Group, group_id)
+    group = await crud.group.remove(id=group_id)
+    return create_response(data=group)
