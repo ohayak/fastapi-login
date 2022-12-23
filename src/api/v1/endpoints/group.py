@@ -109,7 +109,7 @@ async def add_user_into_a_group(
 
 
 @router.post("/remove_user/{user_id}/{group_id}", response_model=IPostResponseBase[IGroupRead])
-async def remove_user_into_from_group(
+async def remove_user_from_group(
     user_id: UUID,
     group_id: UUID,
     current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),

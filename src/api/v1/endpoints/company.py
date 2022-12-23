@@ -1,16 +1,13 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Params
+
 import crud
 from api import deps
 from models.company_model import Company
 from models.user_model import User
-from schemas.company_schema import (
-    ICompanyCreate,
-    ICompanyRead,
-    ICompanyReadWithUsers,
-    ICompanyUpdate,
-)
+from schemas.company_schema import ICompanyCreate, ICompanyRead, ICompanyReadWithUsers, ICompanyUpdate
 from schemas.response_schema import (
     IGetResponseBase,
     IGetResponsePaginated,
@@ -19,11 +16,7 @@ from schemas.response_schema import (
     create_response,
 )
 from schemas.role_schema import IRoleEnum
-from utils.exceptions import (
-    ContentNoChangeException,
-    IdNotFoundException,
-    NameExistException,
-)
+from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 
 router = APIRouter()
 
@@ -62,9 +55,7 @@ async def get_company_by_id(
 )
 async def create_company(
     company: ICompanyCreate,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Creates a new company
@@ -80,9 +71,7 @@ async def create_company(
 async def update_company(
     company_id: UUID,
     company: ICompanyUpdate,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Updates a company by its id
@@ -91,25 +80,18 @@ async def update_company(
     if not company_current:
         raise IdNotFoundException(Company, company_id=company_id)
 
-    if (
-        company_current.name == company.name
-        and company_current.description == company.description
-    ):
+    if company_current.name == company.name and company_current.description == company.description:
         raise ContentNoChangeException()
 
     company_updated = await crud.company.update(obj_current=company_current, obj_new=company)
     return create_response(data=company_updated)
 
 
-@router.post(
-    "/add_user/{user_id}/{company_id}", response_model=IPostResponseBase[ICompanyRead]
-)
+@router.post("/add_user/{user_id}/{company_id}", response_model=IPostResponseBase[ICompanyRead])
 async def add_user_into_a_company(
     user_id: UUID,
     company_id: UUID,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Adds a user into a company
