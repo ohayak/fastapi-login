@@ -1,8 +1,10 @@
-from sqlmodel import Field, Relationship, SQLModel
 from typing import List, Optional
+from uuid import UUID
+
+from sqlmodel import Field, Relationship, SQLModel
+
 from models.base_uuid_model import BaseUUIDModel
 from models.user_model import User
-from uuid import UUID
 
 
 class CompanyBase(SQLModel):

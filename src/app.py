@@ -2,13 +2,12 @@ import logging
 
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
-from sqlmodel import text
 from starlette.middleware.cors import CORSMiddleware
 
 from api.deps import get_redis_client
 from api.v1 import api_router as api_router_v1
 from core.config import settings
-from db.asqlalchemy import SQLAlchemyMiddleware, db
+from db.asqlalchemy import SQLAlchemyMiddleware
 from utils.fastapi_cache import FastAPICache
 from utils.fastapi_cache.backends.redis import RedisBackend
 
@@ -59,9 +58,6 @@ async def root():
 
 @app.on_event("startup")
 async def on_startup():
-    async with db():
-        query = text("CREATE EXTENSION IF NOT EXISTS pg_trgm")
-        await db.session.execute(query)
     redis_client = await get_redis_client()
     FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
     logging.info("startup fastapi")

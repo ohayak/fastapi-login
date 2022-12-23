@@ -51,4 +51,5 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
         await db.session.refresh(group)
         return group
 
+
 group = CRUDGroup(Group)

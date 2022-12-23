@@ -20,8 +20,8 @@ parse_params() {
     -e | --dotenv) dotenv=1 ;;
     -m | --migrate) migrate=1 ;;
     -i | --init) init=1 ;;
-    # example named parameter 
-    # -p | --param) 
+    # example named parameter
+    # -p | --param)
     #   param="${2-}"
     #   shift
     #   ;;
@@ -40,7 +40,7 @@ parse_params() {
 }
 
 main() {
-    if  [[ $dotenv > 0 ]]; then 
+    if  [[ $dotenv > 0 ]]; then
       set -a; source .env; set +a;
     fi
 
@@ -74,7 +74,7 @@ main() {
     if [[ "$DB_MIGRATE" == "true" || $migrate > 0 ]]; then
       alembic upgrade heads
     fi
-    
+
     if [[ "$DB_INIT" == "true" || $init > 0 ]]; then
       python src/initdb.py
     fi

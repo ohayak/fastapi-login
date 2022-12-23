@@ -2,29 +2,14 @@ import logging
 from io import BytesIO
 from typing import Optional
 from uuid import UUID
-from models import User, Role
-from utils.exceptions import (
-    IdNotFoundException,
-    NameNotFoundException,
-    UserSelfDeleteException,
-)
-import crud
-from api import deps
-from utils.minio_client import MinioClient
-from utils.resize_image import modify_image
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    File,
-    Query,
-    Response,
-    UploadFile,
-    status,
-)
 
+from fastapi import APIRouter, Body, Depends, File, Query, Response, UploadFile, status
 from fastapi_pagination import Params
 from sqlmodel import and_, select
+
+import crud
+from api import deps
+from models import Role, User
 from schemas.media_schema import IMediaCreate
 from schemas.response_schema import (
     IDeleteResponseBase,
@@ -35,20 +20,19 @@ from schemas.response_schema import (
     create_response,
 )
 from schemas.role_schema import IRoleEnum
-from schemas.user_schema import (
-    IUserCreate,
-    IUserRead,
-    IUserReadWithoutGroups,
-    IUserStatus,
-)
+from schemas.user_schema import IUserCreate, IUserRead, IUserReadWithoutGroups, IUserStatus
+from utils.exceptions import IdNotFoundException, NameNotFoundException, UserSelfDeleteException
+from utils.minio_client import MinioClient
+from utils.resize_image import modify_image
 
 router = APIRouter()
 
 
 @router.get("/list", response_model=IGetResponsePaginated[IUserReadWithoutGroups])
 async def read_users_list(
-        params: Params = Depends(),
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager]))):
+    params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+):
     """
     Retrieve users. Requires admin or manager role
     """
@@ -63,17 +47,13 @@ async def read_users_list(
     response_model=IGetResponsePaginated[IUserReadWithoutGroups],
 )
 async def read_users_list_by_role_name(
-        user_status: Optional[IUserStatus] = Query(
-            default=IUserStatus.active,
-            description="User status, It is optional. Default is active",
-        ),
-        role_name: str = Query(
-            default="", description="String compare with name or last name"
-        ),
-        params: Params = Depends(),
-        current_user: User = Depends(
-            deps.get_current_user(required_roles=[IRoleEnum.admin])
-        ),
+    user_status: Optional[IUserStatus] = Query(
+        default=IUserStatus.active,
+        description="User status, It is optional. Default is active",
+    ),
+    role_name: str = Query(default="", description="String compare with name or last name"),
+    params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Retrieve users by role name and status. Requires admin role
@@ -97,26 +77,20 @@ async def read_users_list_by_role_name(
     response_model=IGetResponsePaginated[IUserReadWithoutGroups],
 )
 async def get_user_list_order_by_created_at(
-        params: Params = Depends(),
-        current_user: User = Depends(
-            deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-        ),
+    params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Gets a paginated list of users ordered by created datetime
     """
-    users = await crud.user.get_multi_paginated_ordered(
-        params=params, order_by="created_at"
-    )
+    users = await crud.user.get_multi_paginated_ordered(params=params, order_by="created_at")
     return create_response(data=users)
 
 
 @router.get("/{user_id}", response_model=IGetResponseBase[IUserRead])
 async def get_user_by_id(
-        user_id: UUID,
-        current_user: User = Depends(
-            deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-        ),
+    user_id: UUID,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Gets a user by his/her id
@@ -129,7 +103,7 @@ async def get_user_by_id(
 
 @router.get("", response_model=IGetResponseBase[IUserRead])
 async def get_my_data(
-        current_user: User = Depends(deps.get_current_user()),
+    current_user: User = Depends(deps.get_current_user()),
 ):
     """
     Gets my user profile information
@@ -137,14 +111,10 @@ async def get_my_data(
     return create_response(data=current_user)
 
 
-@router.post(
-    "", response_model=IPostResponseBase[IUserRead], status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=IPostResponseBase[IUserRead], status_code=status.HTTP_201_CREATED)
 async def create_user(
-        new_user: IUserCreate = Depends(deps.user_exists),
-        current_user: User = Depends(
-            deps.get_current_user(required_roles=[IRoleEnum.admin])
-        ),
+    new_user: IUserCreate = Depends(deps.user_exists),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Creates a new user
@@ -160,10 +130,8 @@ async def create_user(
 
 @router.delete("/{user_id}", response_model=IDeleteResponseBase[IUserRead])
 async def remove_user(
-        user: User = Depends(deps.is_valid_user),
-        current_user: User = Depends(
-            deps.get_current_user(required_roles=[IRoleEnum.admin])
-        ),
+    user: User = Depends(deps.is_valid_user),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Deletes a user by his/her id
@@ -177,11 +145,11 @@ async def remove_user(
 
 # @router.post("/image", response_model=IPostResponseBase[IUserRead])
 async def upload_my_image(
-        title: Optional[str] = Body(None),
-        description: Optional[str] = Body(None),
-        image_file: UploadFile = File(...),
-        current_user: User = Depends(deps.get_current_user()),
-        minio_client: MinioClient = Depends(deps.minio_auth),
+    title: Optional[str] = Body(None),
+    description: Optional[str] = Body(None),
+    image_file: UploadFile = File(...),
+    current_user: User = Depends(deps.get_current_user()),
+    minio_client: MinioClient = Depends(deps.minio_auth),
 ):
     """
     Uploads a user image
@@ -193,9 +161,7 @@ async def upload_my_image(
             file_data=BytesIO(image_modified.file_data),
             content_type=image_file.content_type,
         )
-        media = IMediaCreate(
-            title=title, description=description, path=data_file.file_name
-        )
+        media = IMediaCreate(title=title, description=description, path=data_file.file_name)
         user = await crud.user.update_photo(
             user=current_user,
             image=media,
@@ -211,14 +177,12 @@ async def upload_my_image(
 
 # @router.post("/{user_id}/image", response_model=IPostResponseBase[IUserRead])
 async def upload_user_image(
-        user: User = Depends(deps.is_valid_user),
-        title: Optional[str] = Body(None),
-        description: Optional[str] = Body(None),
-        image_file: UploadFile = File(...),
-        current_user: User = Depends(
-            deps.get_current_user(required_roles=[IRoleEnum.admin])
-        ),
-        minio_client: MinioClient = Depends(deps.minio_auth),
+    user: User = Depends(deps.is_valid_user),
+    title: Optional[str] = Body(None),
+    description: Optional[str] = Body(None),
+    image_file: UploadFile = File(...),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    minio_client: MinioClient = Depends(deps.minio_auth),
 ):
     """
     Uploads a user image by his/her id
@@ -230,9 +194,7 @@ async def upload_user_image(
             file_data=BytesIO(image_modified.file_data),
             content_type=image_file.content_type,
         )
-        media = IMediaCreate(
-            title=title, description=description, path=data_file.file_name
-        )
+        media = IMediaCreate(title=title, description=description, path=data_file.file_name)
         user = await crud.user.update_photo(
             user=user,
             image=media,

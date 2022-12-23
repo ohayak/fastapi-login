@@ -45,7 +45,7 @@ class User(BaseUUIDModel, UserBase, table=True):
             "primaryjoin": "User.image_id==ImageMedia.id",
         }
     )
-    company: Optional["Company"] = Relationship(
+    company: Optional["Company"] = Relationship(  # noqa: F821
         back_populates="users",
         sa_relationship_kwargs={"lazy": "selectin", "primaryjoin": "User.company_id==Company.id"},
     )

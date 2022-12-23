@@ -8,4 +8,4 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S %z",
 )
 
-from app import app
+from app import app  # noqa

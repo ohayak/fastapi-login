@@ -8,7 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncEngine
 
 from alembic import context
 from core.config import Settings
-from models import *  # necessarily to import something from file where your models are stored
+from models import *  # noqa
 
 settings = Settings()
 # this is the Alembic Config object, which provides
