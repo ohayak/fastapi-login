@@ -1,16 +1,9 @@
-try:
-    import orjson as json
-except ImportError:
-    import json
-import dbm
+import os
 import logging
-from httpx import Client, HTTPStatusError, HTTPTransport, RequestError
-
-from settings import settings
 
 # hypercorn logging format
 logging.basicConfig(
-    level=settings.log_level,
+    level=os.getenv('LOG_LEVEL', 'INFO'),
     format="[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S %z",
 )

@@ -1,49 +1,69 @@
 import logging
-from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from settings import settings
+from fastapi import FastAPI
+from fastapi_pagination import add_pagination
+from starlette.middleware.cors import CORSMiddleware
+from api.v1 import api_router as api_router_v1
+from core.config import settings
+from db.asqlalchemy import db, SQLAlchemyMiddleware
+from sqlmodel import text
+from utils.fastapi_cache import FastAPICache
+from utils.fastapi_cache.backends.redis import RedisBackend
+from api.deps import get_redis_client
 
+# Core Application Instance
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.API_VERSION,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+)
 
-from api import router
+app.add_middleware(
+    SQLAlchemyMiddleware,
+    db_url=settings.ASYNC_DB_AUTH_URI,
+    engine_args={
+        "echo": False,
+        "pool_pre_ping": True,
+        "pool_size": settings.POOL_SIZE,
+        "max_overflow": 64,
+    },
+)
 
-app = FastAPI(title="bib-api", version="0.0.1", root_path=settings.root_path)
-app.include_router(router)
-
-
-@app.get("/")
-def welcome(request: Request):
-    return f"Welcome to {app.title} v{app.version}"
-
-
-@app.get("/status")
-def status(request: Request):
-    database_status = "OK"
-
-    # try:
-    #     db.db.execute("SELECT 1")
-    # except Exception as e:
-    #     logging.exception(e)
-    #     database_status = "KO"
-
-    return {"root_path": request.scope.get("root_path"), "database": database_status}
-
-
-if settings.enable_cors:
+# Set all CORS origins enabled
+if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
+class CustomException(Exception):
+    http_code: int
+    code: str
+    message: str
+
+    def __init__(self, http_code: int = None, code: str = None, message: str = None):
+        self.http_code = http_code if http_code else 500
+        self.code = code if code else str(self.http_code)
+        self.message = message
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
 
 @app.on_event("startup")
-async def startup() -> None:
-    return
+async def on_startup():
+    async with db():
+        query = text("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+        await db.session.execute(query)
+    redis_client = await get_redis_client()
+    FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
+    logging.info("startup fastapi")
 
 
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    return
+# Add Routers
+app.include_router(api_router_v1, prefix=settings.API_V1_STR)
+add_pagination(app)

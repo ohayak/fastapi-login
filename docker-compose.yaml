@@ -6,6 +6,12 @@ volumes:
   sched:
   cache:
 services:
+  redis:
+    container_name: redis
+    image: "redis:alpine"
+    restart: always
+    ports:
+      - 6379:6379
   dbauth:
     image: postgres:14.0
     container_name: dbauth
@@ -15,6 +21,8 @@ services:
       - POSTGRES_DB=auth
     volumes:
       - auth:/var/lib/pgsql
+    ports:
+      - 54320:5432
   dbsched:
     image: postgres:14.0
     container_name: dbsched
@@ -24,6 +32,8 @@ services:
       - POSTGRES_DB=scheduler
     volumes:
       - sched:/var/lib/pgsql
+    ports:
+      - 54321:5432
   dbdata:
     image: postgres:14.0
     container_name: dbdata
@@ -33,22 +43,26 @@ services:
       - POSTGRES_DB=data
     volumes:
       - data:/var/lib/pgsql
-  api:
-    build:
-      context: .
-    container_name: api
-    environment:
-    - DB_MIGRATE=true
-    - DB_AUTH_HOST=dbauth
-    - DB_SCHEDULER_HOST=dbsched
-    - DB_DATA_HOST=dbdata
-    - LOG_LEVEL=INFO
-    - ACCESSLOG=true
-    - ERRORLOG=true
-    - RELOAD=true
-    depends_on:
-      - dbdata
-      - dbauth
-      - dbsched
     ports:
-      - 8000:8000
+      - 54322:5432
+  # api:
+  #   build:
+  #     context: .
+  #   container_name: api
+  #   environment:
+  #   - DB_MIGRATE=true
+  #   - DB_AUTH_HOST=dbauth
+  #   - DB_SCHEDULER_HOST=dbsched
+  #   - DB_DATA_HOST=dbdata
+  #   - REDIS_HOST=redis
+  #   - LOG_LEVEL=INFO
+  #   - ACCESSLOG=true
+  #   - ERRORLOG=true
+  #   - RELOAD=true
+  #   depends_on:
+  #     - redis
+  #     - dbdata
+  #     - dbauth
+  #     - dbsched
+  #   ports:
+  #     - 8000:8000
