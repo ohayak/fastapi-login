@@ -1,4 +1,3 @@
-import logging
 from typing import List, Optional
 from uuid import UUID
 
@@ -43,9 +42,7 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
 
     async def remove_user_from_group(self, *, user: User, group_id: UUID) -> Group:
         group = await super().get(id=group_id)
-        logging.debug(group)
         group.users.remove(user)
-        logging.debug(group)
         db.session.add(group)
         await db.session.commit()
         await db.session.refresh(group)
