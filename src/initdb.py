@@ -22,6 +22,10 @@ groups: List[IGroupCreate] = [
     IGroupCreate(name="GR1", description="This is the first group")
 ]
 
+companies: List[ICompanyCreate] = [
+    ICompanyCreate(name="EXOTEC")
+]
+
 users: List[Dict[str, Union[str, IUserCreate]]] = [
     {
         "data": IUserCreate(
@@ -37,8 +41,8 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
         "data": IUserCreate(
             first_name="Manager",
             last_name="FastAPI",
-            password=settings.FIRST_SUPERUSER_PASSWORD,
-            email="manager@example.com",
+            password="manager",
+            email="manager@exotec.com",
             is_superuser=False,
         ),
         "role": "manager",
@@ -47,16 +51,12 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
         "data": IUserCreate(
             first_name="Operator",
             last_name="FastAPI",
-            password=settings.FIRST_SUPERUSER_PASSWORD,
-            email="operator@example.com",
+            password="operator",
+            email="operator@exitec.com",
             is_superuser=False,
         ),
         "role": "operator",
     },
-]
-
-companies: List[ICompanyCreate] = [
-    ICompanyCreate(name="EXOTEC")
 ]
 
 
