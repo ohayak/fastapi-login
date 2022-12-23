@@ -12,9 +12,9 @@ from schemas.user_schema import IUserCreate, IUserRead
 from schemas.group_schema import IGroupCreate
 
 roles: List[IRoleCreate] = [
-    IRoleCreate(name="admin", description="This the Admin role"),
+    IRoleCreate(name="admin", description="Admin role"),
     IRoleCreate(name="manager", description="Manager role"),
-    IRoleCreate(name="user", description="User role"),
+    IRoleCreate(name="operator", description="Operator role"),
 ]
 
 groups: List[IGroupCreate] = [

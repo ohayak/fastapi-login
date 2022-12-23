@@ -140,9 +140,9 @@ async def change_password(
 
 
 @router.post(
-    "/new_access_token", response_model=IPostResponseBase[TokenRead], status_code=201
+    "/refresh-token", response_model=IPostResponseBase[TokenRead], status_code=201
 )
-async def get_new_access_token(
+async def refresh_token(
     body: RefreshToken = Body(...),
     redis_client: Redis = Depends(get_redis_client),
 ) -> Any:
@@ -191,7 +191,7 @@ async def get_new_access_token(
         raise HTTPException(status_code=404, detail="Incorrect token")
 
 
-@router.post("/access-token", response_model=TokenRead)
+@router.post("/token", response_model=TokenRead)
 async def login_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     redis_client: Redis = Depends(get_redis_client),
