@@ -4,8 +4,7 @@ from datetime import timedelta
 
 from minio import Minio
 from pydantic import BaseModel
-
-from utils.uuid6 import uuid7
+from uuid6 import uuid7
 
 
 class IMinioResponse(BaseModel):

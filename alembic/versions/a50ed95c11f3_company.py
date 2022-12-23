@@ -27,7 +27,9 @@ def upgrade() -> None:
         sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("contact_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
         sa.Column("created_by_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
+        sa.ForeignKeyConstraint(["contact_id"], ["User.id"], ondelete="set null"),
         sa.ForeignKeyConstraint(["created_by_id"], ["User.id"], ondelete="set null"),
         sa.PrimaryKeyConstraint("id"),
     )

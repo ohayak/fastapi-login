@@ -40,5 +40,13 @@ class CRUDCompany(CRUDBase[Company, ICompanyCreate, ICompanyUpdate]):
         await db_session.refresh(company)
         return company
 
+    async def add_contact_to_company(self, *, user: User, company_id: UUID) -> Company:
+        company = await super().get(id=company_id)
+        company.contact = user
+        db.session.add(company)
+        await db.session.commit()
+        await db.session.refresh(company)
+        return company
+
 
 company = CRUDCompany(Company)

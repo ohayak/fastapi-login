@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import Any, Dict, Generic, Optional, Sequence, TypeVar, Union
 
@@ -81,4 +82,5 @@ def create_response(
     body_response = {"data": data, "message": message, "meta": meta}
     # It returns a dictionary to avoid double
     # validation https://github.com/tiangolo/fastapi/issues/3021
+    logging.debug(body_response.items())
     return dict((k, v) for k, v in body_response.items() if v is not None)

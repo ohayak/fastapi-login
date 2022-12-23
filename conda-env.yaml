@@ -23,6 +23,7 @@ dependencies:
   - minio=7.1.12
   - pillow=9.2.0
   - pip:
+    - uuid6==2022.10.25
     - fastapi-pagination==0.11.1
     - apscheduler==4.0.0a2
     - hypercorn==0.14.3

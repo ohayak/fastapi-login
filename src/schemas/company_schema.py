@@ -21,6 +21,7 @@ class ICompanyUpdate(CompanyBase):
     pass
 
 
-class ICompanyReadWithUsers(CompanyBase):
-    id: UUID
+class ICompanyReadWithUsers(ICompanyRead):
+    contact: Optional[IUserReadWithoutCompany]
+    created_by: Optional[IUserReadWithoutCompany]
     users: Optional[List[IUserReadWithoutCompany]] = []

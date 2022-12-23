@@ -4,8 +4,7 @@ from typing import Optional
 from sqlalchemy.orm import declared_attr
 from sqlmodel import Field
 from sqlmodel import SQLModel as _SQLModel
-
-from utils.uuid6 import UUID, uuid7
+from uuid6 import UUID, uuid7
 
 # id: implements proposal uuid7 draft4
 

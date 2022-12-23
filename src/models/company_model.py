@@ -14,11 +14,18 @@ class CompanyBase(SQLModel):
 
 
 class Company(BaseUUIDModel, CompanyBase, table=True):
-    created_by_id: Optional[UUID] = Field(default=None, foreign_key="User.id")
-    created_by: "User" = Relationship(
+    created_by_id: Optional[UUID] = Field(foreign_key="User.id")
+    created_by: Optional["User"] = Relationship(
         sa_relationship_kwargs={
             "lazy": "selectin",
             "primaryjoin": "Company.created_by_id==User.id",
+        }
+    )
+    contact_id: Optional[UUID] = Field(foreign_key="User.id")
+    contact: Optional["User"] = Relationship(
+        sa_relationship_kwargs={
+            "lazy": "selectin",
+            "primaryjoin": "Company.contact_id==User.id",
         }
     )
     users: List["User"] = Relationship(

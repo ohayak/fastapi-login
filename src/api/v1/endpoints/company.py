@@ -27,10 +27,10 @@ async def get_companies(
     current_user: User = Depends(deps.get_current_user()),
 ):
     """
-    Gets a paginated list of companys
+    Gets a paginated list of companies
     """
-    companys = await crud.company.get_multi_paginated(params=params)
-    return create_response(data=companys)
+    companies = await crud.company.get_multi_paginated(params=params)
+    return create_response(data=companies)
 
 
 @router.get("/{company_id}", response_model=IGetResponseBase[ICompanyReadWithUsers])

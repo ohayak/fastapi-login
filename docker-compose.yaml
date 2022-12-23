@@ -45,27 +45,27 @@ services:
       - data:/var/lib/pgsql
     ports:
       - 54322:5432
-  api:
-    build:
-      context: .
-    container_name: api
-    environment:
-    - DB_MIGRATE=true
-    - DB_INIT=true
-    - DB_AUTH_HOST=dbauth
-    - DB_SCHEDULER_HOST=dbsched
-    - DB_DATA_HOST=dbdata
-    - REDIS_HOST=redis
-    - LOG_LEVEL=INFO
-    - ACCESSLOG=true
-    - ERRORLOG=true
-    - RELOAD=true
-    - FIRST_SUPERUSER_EMAIL=admin@bib.fr
-    - FIRST_SUPERUSER_PASSWORD=password
-    depends_on:
-      - redis
-      - dbdata
-      - dbauth
-      - dbsched
-    ports:
-      - 8000:8000
+  # api:
+  #   build:
+  #     context: .
+  #   container_name: api
+  #   environment:
+  #   - DB_MIGRATE=true
+  #   - DB_INIT=true
+  #   - DB_AUTH_HOST=dbauth
+  #   - DB_SCHEDULER_HOST=dbsched
+  #   - DB_DATA_HOST=dbdata
+  #   - REDIS_HOST=redis
+  #   - LOG_LEVEL=INFO
+  #   - ACCESSLOG=true
+  #   - ERRORLOG=true
+  #   - RELOAD=true
+  #   - FIRST_SUPERUSER_EMAIL=admin@bib.fr
+  #   - FIRST_SUPERUSER_PASSWORD=password
+  #   depends_on:
+  #     - redis
+  #     - dbdata
+  #     - dbauth
+  #     - dbsched
+  #   ports:
+  #     - 8000:8000
