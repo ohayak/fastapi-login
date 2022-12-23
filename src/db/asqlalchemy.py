@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.types import ASGIApp
 
+
 class MissingSessionError(Exception):
     """Excetion raised for when the user tries to access a database session before it is created."""
 

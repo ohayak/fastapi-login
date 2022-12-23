@@ -2,6 +2,7 @@
 # https://github.com/pydantic/pydantic/pull/3179
 # Todo migrate to pydanticv2 partial
 import inspect
+
 from pydantic import BaseModel
 
 

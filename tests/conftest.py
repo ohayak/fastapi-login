@@ -1,7 +1,6 @@
 import warnings
 from typing import Generator
 
-import alembic.config
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -9,6 +8,7 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.engine.url import URL, make_url
 from sqlalchemy.exc import ProgrammingError
 
+import alembic.config
 from src.services.db import db_url
 from src.settings import settings
 

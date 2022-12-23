@@ -10,6 +10,7 @@ parse_params() {
   # default values of variables set from params
   dotenv=0
   migrate=0
+  init=0
   param=''
 
   while :; do
@@ -18,6 +19,7 @@ parse_params() {
     -v | --verbose) set -x ;;
     -e | --dotenv) dotenv=1 ;;
     -m | --migrate) migrate=1 ;;
+    -i | --init) init=1 ;;
     # example named parameter 
     # -p | --param) 
     #   param="${2-}"
@@ -52,6 +54,7 @@ main() {
     WORKERS=${WORKERS:-}
     ROOT_PATH=${ROOT_PATH:-}
     DB_MIGRATE=${DB_MIGRATE:-false}
+    DB_INIT=${DB_INIT:-false}
 
     chunks=("hypercorn" "--bind" "$HOST:$PORT" "--log-level" "$LOG_LEVEL")
 
@@ -69,11 +72,14 @@ main() {
     done
 
     if [[ "$DB_MIGRATE" == "true" || $migrate > 0 ]]; then
-      msg "Running Almebic migration"
       alembic upgrade heads
     fi
+    
+    if [[ "$DB_INIT" == "true" || $init > 0 ]]; then
+      python src/initdb.py
+    fi
 
-    msg "Running server: $cmd"
+    msg "Exec: $cmd"
     exec $cmd
 }
 

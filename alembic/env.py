@@ -1,11 +1,13 @@
 from __future__ import with_statement
+
 import asyncio
 from logging.config import fileConfig
+
 from sqlmodel import SQLModel, create_engine
 from sqlmodel.ext.asyncio.session import AsyncEngine
+
 from alembic import context
 from core.config import Settings
-
 from models import *  # necessarily to import something from file where your models are stored
 
 settings = Settings()
@@ -37,7 +39,11 @@ def run_migrations_offline():
     """
     url = settings.ASYNC_DB_AUTH_URI
     context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True, compare_type=True, dialect_opts={"paramstyle": "named"}
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        compare_type=True,
+        dialect_opts={"paramstyle": "named"},
     )
 
     with context.begin_transaction():
@@ -49,6 +55,7 @@ def do_run_migrations(connection):
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 async def run_migrations_online():
     """Run migrations in 'online' mode.

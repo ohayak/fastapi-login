@@ -1,11 +1,8 @@
 from uuid import UUID
-from utils.exceptions import (
-    ContentNoChangeException,
-    IdNotFoundException,
-    NameExistException,
-)
+
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Params
+
 import crud
 from api import deps
 from models.role_model import Role
@@ -18,6 +15,7 @@ from schemas.response_schema import (
     create_response,
 )
 from schemas.role_schema import IRoleCreate, IRoleEnum, IRoleRead, IRoleUpdate
+from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 
 router = APIRouter()
 
@@ -53,14 +51,10 @@ async def get_role_by_id(
         raise IdNotFoundException(Role, id=role_id)
 
 
-@router.post(
-    "", response_model=IPostResponseBase[IRoleRead], status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=IPostResponseBase[IRoleRead], status_code=status.HTTP_201_CREATED)
 async def create_role(
     role: IRoleCreate,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Create a new role
@@ -77,9 +71,7 @@ async def create_role(
 async def update_permission(
     role_id: UUID,
     role: IRoleUpdate,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Updates the permission of a role by its id

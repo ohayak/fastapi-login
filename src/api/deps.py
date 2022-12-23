@@ -1,27 +1,25 @@
 from typing import AsyncGenerator, List
 from uuid import UUID
+
+import aioredis
+from aioredis import Redis
 from fastapi import Depends, HTTPException, status
-from utils.token import get_valid_tokens
-from schemas.user_schema import IUserRead
-from utils.minio_client import MinioClient
-from schemas.user_schema import IUserCreate
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
-from models.user_model import User
 from pydantic import ValidationError
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 import crud
 from core import security
 from core.config import settings
 from db.session import SessionLocal
-from sqlmodel.ext.asyncio.session import AsyncSession
+from models.user_model import User
 from schemas.common_schema import IMetaGeneral, TokenType
-import aioredis
-from aioredis import Redis
+from schemas.user_schema import IUserCreate, IUserRead
+from utils.minio_client import MinioClient
+from utils.token import get_valid_tokens
 
-
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
-)
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
 
 async def get_redis_client() -> Redis:
@@ -50,18 +48,14 @@ def get_current_user(required_roles: List[str] = None) -> User:
         redis_client: Redis = Depends(get_redis_client),
     ) -> User:
         try:
-            payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
-            )
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
         except (jwt.JWTError, ValidationError):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Could not validate credentials",
             )
         user_id = payload["sub"]
-        valid_access_tokens = await get_valid_tokens(
-            redis_client, user_id, TokenType.ACCESS
-        )
+        valid_access_tokens = await get_valid_tokens(redis_client, user_id, TokenType.ACCESS)
         if valid_access_tokens and token not in valid_access_tokens:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -92,13 +86,14 @@ def get_current_user(required_roles: List[str] = None) -> User:
 
 
 def minio_auth() -> MinioClient:
-    minio_client = MinioClient(
-        access_key=settings.MINIO_ROOT_USER,
-        secret_key=settings.MINIO_ROOT_PASSWORD,
-        bucket_name=settings.MINIO_BUCKET,
-        minio_url=settings.MINIO_URL,
-    )
-    return minio_client
+    # minio_client = MinioClient(
+    #     access_key=settings.MINIO_ROOT_USER,
+    #     secret_key=settings.MINIO_ROOT_PASSWORD,
+    #     bucket_name=settings.MINIO_BUCKET,
+    #     minio_url=settings.MINIO_URL,
+    # )
+    # return minio_client
+    raise NotImplementedError()
 
 
 async def user_exists(new_user: IUserCreate) -> IUserCreate:

@@ -1,14 +1,16 @@
 import logging
+
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
+from sqlmodel import text
 from starlette.middleware.cors import CORSMiddleware
+
+from api.deps import get_redis_client
 from api.v1 import api_router as api_router_v1
 from core.config import settings
-from db.asqlalchemy import db, SQLAlchemyMiddleware
-from sqlmodel import text
+from db.asqlalchemy import SQLAlchemyMiddleware, db
 from utils.fastapi_cache import FastAPICache
 from utils.fastapi_cache.backends.redis import RedisBackend
-from api.deps import get_redis_client
 
 # Core Application Instance
 app = FastAPI(
@@ -38,6 +40,7 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+
 class CustomException(Exception):
     http_code: int
     code: str
@@ -51,7 +54,7 @@ class CustomException(Exception):
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": f"Welcome to {settings.PROJECT_NAME} {settings.API_V1_STR}"}
 
 
 @app.on_event("startup")

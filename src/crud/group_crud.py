@@ -1,18 +1,18 @@
 from typing import List, Optional
+from uuid import UUID
+
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from crud.base_crud import CRUDBase
+from db.asqlalchemy import db
 from models.group_model import Group
 from models.user_model import User
 from schemas.group_schema import IGroupCreate, IGroupUpdate
-from crud.base_crud import CRUDBase
-from db.asqlalchemy import db
-from sqlmodel import select
-from uuid import UUID
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
-    async def get_group_by_name(
-        self, *, name: str, db_session: Optional[AsyncSession] = None
-    ) -> Group:
+    async def get_group_by_name(self, *, name: str, db_session: Optional[AsyncSession] = None) -> Group:
         db_session = db_session or db.session
         group = await db_session.execute(select(Group).where(Group.name == name))
         return group.scalar_one_or_none()

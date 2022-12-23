@@ -1,18 +1,18 @@
 from typing import Optional
-from schemas.role_schema import IRoleCreate, IRoleUpdate
-from models.role_model import Role
-from models.user_model import User
+from uuid import UUID
+
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from crud.base_crud import CRUDBase
 from db.asqlalchemy import db
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
-from uuid import UUID
+from models.role_model import Role
+from models.user_model import User
+from schemas.role_schema import IRoleCreate, IRoleUpdate
 
 
 class CRUDRole(CRUDBase[Role, IRoleCreate, IRoleUpdate]):
-    async def get_role_by_name(
-        self, *, name: str, db_session: Optional[AsyncSession] = None
-    ) -> Role:
+    async def get_role_by_name(self, *, name: str, db_session: Optional[AsyncSession] = None) -> Role:
         db_session = db_session or db.session
         role = await db_session.execute(select(Role).where(Role.name == name))
         return role.scalar_one_or_none()

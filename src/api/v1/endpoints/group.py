@@ -1,16 +1,13 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Params
+
 import crud
 from api import deps
 from models.group_model import Group
 from models.user_model import User
-from schemas.group_schema import (
-    IGroupCreate,
-    IGroupRead,
-    IGroupReadWithUsers,
-    IGroupUpdate,
-)
+from schemas.group_schema import IGroupCreate, IGroupRead, IGroupReadWithUsers, IGroupUpdate
 from schemas.response_schema import (
     IGetResponseBase,
     IGetResponsePaginated,
@@ -19,11 +16,7 @@ from schemas.response_schema import (
     create_response,
 )
 from schemas.role_schema import IRoleEnum
-from utils.exceptions import (
-    ContentNoChangeException,
-    IdNotFoundException,
-    NameExistException,
-)
+from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 
 router = APIRouter()
 
@@ -62,9 +55,7 @@ async def get_group_by_id(
 )
 async def create_group(
     group: IGroupCreate,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Creates a new group
@@ -80,9 +71,7 @@ async def create_group(
 async def update_group(
     group_id: UUID,
     group: IGroupUpdate,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Updates a group by its id
@@ -91,25 +80,18 @@ async def update_group(
     if not group_current:
         raise IdNotFoundException(Group, group_id=group_id)
 
-    if (
-        group_current.name == group.name
-        and group_current.description == group.description
-    ):
+    if group_current.name == group.name and group_current.description == group.description:
         raise ContentNoChangeException()
 
     group_updated = await crud.group.update(obj_current=group_current, obj_new=group)
     return create_response(data=group_updated)
 
 
-@router.post(
-    "/add_user/{user_id}/{group_id}", response_model=IPostResponseBase[IGroupRead]
-)
+@router.post("/add_user/{user_id}/{group_id}", response_model=IPostResponseBase[IGroupRead])
 async def add_user_into_a_group(
     user_id: UUID,
     group_id: UUID,
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
-    ),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Adds a user into a group

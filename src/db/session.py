@@ -1,7 +1,8 @@
-from sqlalchemy.orm import sessionmaker
-from core.config import settings
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import sessionmaker
 from sqlmodel.ext.asyncio.session import AsyncSession
+
+from core.config import settings
 
 DB_POOL_SIZE = 83
 WEB_CONCURRENCY = 9
@@ -11,7 +12,7 @@ connect_args = {"check_same_thread": False}
 
 engine = create_async_engine(
     settings.ASYNC_DB_AUTH_URI,
-    echo=True,
+    echo=False,
     future=True,
     pool_size=POOL_SIZE,
     max_overflow=64,

@@ -1,6 +1,8 @@
-from typing import List
-from pydantic import BaseModel
 from enum import Enum
+from typing import List
+
+from pydantic import BaseModel
+
 from schemas.role_schema import IRoleRead
 
 

@@ -1,6 +1,7 @@
 import math
-from typing import Any, Dict, Generic, Sequence, Union, Optional, TypeVar
-from fastapi_pagination import Params, Page
+from typing import Any, Dict, Generic, Optional, Sequence, TypeVar, Union
+
+from fastapi_pagination import Page, Params
 from fastapi_pagination.bases import AbstractPage, AbstractParams
 from pydantic.generics import GenericModel
 
@@ -78,6 +79,6 @@ def create_response(
         data.meta = meta
         return data
     body_response = {"data": data, "message": message, "meta": meta}
-    # It returns a dictionary to avoid doble
+    # It returns a dictionary to avoid double
     # validation https://github.com/tiangolo/fastapi/issues/3021
     return dict((k, v) for k, v in body_response.items() if v is not None)

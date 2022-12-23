@@ -1,7 +1,8 @@
 from enum import Enum
+from uuid import UUID
+
 from models.role_model import RoleBase
 from utils.partial import optional
-from uuid import UUID
 
 
 class IRoleCreate(RoleBase):
@@ -13,8 +14,10 @@ class IRoleCreate(RoleBase):
 class IRoleUpdate(RoleBase):
     pass
 
+
 class IRoleRead(RoleBase):
     id: UUID
+
 
 class IRoleEnum(str, Enum):
     admin = "admin"

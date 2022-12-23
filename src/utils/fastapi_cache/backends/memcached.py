@@ -1,7 +1,6 @@
 from typing import Tuple
 
 from aiomcache import Client
-
 from fastapi_cache.backends import Backend
 
 

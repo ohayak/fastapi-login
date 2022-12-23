@@ -9,8 +9,9 @@ https://github.com/uuid6/uuid6-ietf-draft.
 import os
 import secrets
 import time
-from uuid import SafeUUID, UUID as UUID_
 from typing import Tuple
+from uuid import UUID as UUID_
+from uuid import SafeUUID
 
 
 class UUID(UUID_):
@@ -60,11 +61,7 @@ class UUID(UUID_):
     @property
     def time(self) -> int:
         if self.version == 6:
-            return (
-                (self.time_low << 28)
-                | (self.time_mid << 12)
-                | (self.time_hi_version & 0x0FFF)
-            )
+            return (self.time_low << 28) | (self.time_mid << 12) | (self.time_hi_version & 0x0FFF)
         if self.version == 7:
             return (self.int >> 80) * 10**6 + _subsec_decode(self.subsec)
         return super().time

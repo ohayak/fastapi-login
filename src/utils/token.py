@@ -1,7 +1,9 @@
-from typing import Optional
 from datetime import timedelta
+from typing import Optional
 from uuid import UUID
+
 from aioredis import Redis
+
 from models.user_model import User
 from schemas.common_schema import TokenType
 

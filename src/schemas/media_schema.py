@@ -1,11 +1,13 @@
-import api
-from utils.minio_client import MinioClient
-from models.media_model import ImageMediaBase, MediaBase
-from pydantic import validator
-from core.config import settings
-from utils.partial import optional
 from typing import Any, Optional, Union
 from uuid import UUID
+
+from pydantic import validator
+
+import api
+from core.config import settings
+from models.media_model import ImageMediaBase, MediaBase
+from utils.minio_client import MinioClient
+from utils.partial import optional
 
 
 class IMediaCreate(MediaBase):
@@ -29,9 +31,7 @@ class IMediaRead(MediaBase):
         if values["path"] is None:
             return ""
         minio: MinioClient = api.deps.minio_auth()
-        url = minio.presigned_get_object(
-            bucket_name=settings.MINIO_BUCKET, object_name=values["path"]
-        )
+        url = minio.presigned_get_object(bucket_name=settings.MINIO_BUCKET, object_name=values["path"])
         return url
 
 

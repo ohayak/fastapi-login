@@ -1,7 +1,9 @@
-from models.base_uuid_model import BaseUUIDModel
-from uuid import UUID
-from sqlmodel import Field, SQLModel, Relationship
 from typing import Optional
+from uuid import UUID
+
+from sqlmodel import Field, Relationship, SQLModel
+
+from models.base_uuid_model import BaseUUIDModel
 
 
 class MediaBase(SQLModel):

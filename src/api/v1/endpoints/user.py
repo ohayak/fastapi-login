@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 from typing import Optional
 from uuid import UUID
@@ -178,7 +179,7 @@ async def remove_user(
     return create_response(data=user)
 
 
-@router.post("/image", response_model=IPostResponseBase[IUserRead])
+# @router.post("/image", response_model=IPostResponseBase[IUserRead])
 async def upload_my_image(
     title: Optional[str] = Body(None),
     description: Optional[str] = Body(None),
@@ -212,7 +213,7 @@ async def upload_my_image(
         return Response("Internal server error", status_code=500)
 
 
-@router.post("/{user_id}/image", response_model=IPostResponseBase[IUserRead])
+# @router.post("/{user_id}/image", response_model=IPostResponseBase[IUserRead])
 async def upload_user_image(
     user: User = Depends(deps.is_valid_user),
     title: Optional[str] = Body(None),
