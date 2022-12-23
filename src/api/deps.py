@@ -1,3 +1,4 @@
+import logging
 from typing import AsyncGenerator, List
 from uuid import UUID
 
@@ -29,6 +30,7 @@ async def get_redis_client() -> Redis:
         encoding="utf8",
         decode_responses=True,
     )
+    logging.debug(redis)
     return redis
 
 

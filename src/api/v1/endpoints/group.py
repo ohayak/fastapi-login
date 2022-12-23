@@ -49,7 +49,7 @@ async def get_group_by_id(
 
 
 @router.post(
-    "",
+    "create group",
     response_model=IPostResponseBase[IGroupRead],
     status_code=status.HTTP_201_CREATED,
 )
@@ -106,3 +106,24 @@ async def add_user_into_a_group(
 
     group = await crud.group.add_user_to_group(user=user, group_id=group_id)
     return create_response(message="User added to group", data=group)
+
+
+@router.post("/remove_user/{user_id}/{group_id}", response_model=IPostResponseBase[IGroupRead])
+async def remove_user_into_from_group(
+    user_id: UUID,
+    group_id: UUID,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+):
+    """
+    remove a user from a group
+    """
+    user = await crud.user.get(id=user_id)
+    if not user:
+        raise IdNotFoundException(User, id=user_id)
+
+    group = await crud.group.get(id=group_id)
+    if not group:
+        raise IdNotFoundException(Group, group_id)
+
+    group = await crud.group.remove_user_from_group(user=user, group_id=group_id)
+    return create_response(message="User removed from group", data=group)
