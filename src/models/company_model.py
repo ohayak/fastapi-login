@@ -11,6 +11,8 @@ class CompanyBase(SQLModel):
     name: str
     description: Optional[str]
     address: Optional[str]
+    status: Optional[str]
+    repair_partner: Optional[str]
 
 
 class Company(BaseUUIDModel, CompanyBase, table=True):

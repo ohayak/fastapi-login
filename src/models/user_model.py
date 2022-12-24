@@ -1,9 +1,8 @@
-from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
 from pydantic import EmailStr
-from sqlmodel import BigInteger, Column, DateTime, Field, Relationship, SQLModel
+from sqlmodel import ARRAY, VARCHAR, BigInteger, Column, DateTime, Field, Relationship, SQLModel
 
 from models.base_uuid_model import BaseUUIDModel
 from models.links_model import LinkGroupUser
@@ -16,16 +15,11 @@ class UserBase(SQLModel):
     email: EmailStr = Field(nullable=True, index=True, sa_column_kwargs={"unique": True})
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
-    birthdate: Optional[datetime] = Field(
-        sa_column=Column(DateTime(timezone=True), nullable=True)
-    )  # birthday with timezone
     role_id: Optional[UUID] = Field(foreign_key="Role.id")
     phone: Optional[str]
-    state: Optional[str]
-    country: Optional[str]
-    address: Optional[str]
     image_id: Optional[UUID] = Field(foreign_key="ImageMedia.id")
-    job_title: Optional[str]
+    job: Optional[str]
+    fleet: Optional[List[str]] = Field(sa_column=Column(ARRAY(VARCHAR)))
     company_id: Optional[UUID] = Field(foreign_key="Company.id")
 
 
