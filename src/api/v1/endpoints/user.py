@@ -1,4 +1,3 @@
-import logging
 from io import BytesIO
 from typing import Optional
 from uuid import UUID
@@ -36,8 +35,6 @@ async def read_users_list(
     """
     Retrieve users. Requires admin or manager role
     """
-    logging.debug("start function")
-    logging.debug(current_user)
     users = await crud.user.get_multi_paginated(params=params)
     return create_response(data=users)
 

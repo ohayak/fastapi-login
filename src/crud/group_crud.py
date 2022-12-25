@@ -17,12 +17,15 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
         group = await db_session.execute(select(Group).where(Group.name == name))
         return group.scalar_one_or_none()
 
-    async def add_user_to_group(self, *, user: User, group_id: UUID) -> Group:
+    async def add_user_to_group(
+        self, *, user: User, group_id: UUID, db_session: Optional[AsyncSession] = None
+    ) -> Group:
+        db_session = db_session or db.session
         group = await super().get(id=group_id)
         group.users.append(user)
-        db.session.add(group)
-        await db.session.commit()
-        await db.session.refresh(group)
+        db_session.add(group)
+        await db_session.commit()
+        await db_session.refresh(group)
         return group
 
     async def add_users_to_group(
@@ -40,12 +43,15 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
         await db_session.refresh(group)
         return group
 
-    async def remove_user_from_group(self, *, user: User, group_id: UUID) -> Group:
-        group = await super().get(id=group_id)
+    async def remove_user_from_group(
+        self, *, user: User, group_id: UUID, db_session: Optional[AsyncSession] = None
+    ) -> Group:
+        db_session = db_session or db.session
+        group = await super().get(id=group_id, db_session=db_session)
         group.users.remove(user)
-        db.session.add(group)
-        await db.session.commit()
-        await db.session.refresh(group)
+        db_session.add(group)
+        await db_session.commit()
+        await db_session.refresh(group)
         return group
 
 

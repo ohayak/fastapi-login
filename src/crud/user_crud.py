@@ -59,16 +59,18 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         heigth: int,
         width: int,
         file_format: str,
+        db_session: Optional[AsyncSession] = None
     ) -> User:
+        db_session = db_session or db.session
         user.image = ImageMedia(
             media=Media.from_orm(image),
             height=heigth,
             width=width,
             file_format=file_format,
         )
-        db.session.add(user)
-        await db.session.commit()
-        await db.session.refresh(user)
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
         return user
 
     async def remove(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> User:

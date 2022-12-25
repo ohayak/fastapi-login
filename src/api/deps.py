@@ -13,7 +13,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import crud
 from core import security
 from core.config import settings
-from db.session import SessionLocal
+from db.session import SessionLocal, SessionLocalBySchema
 from models.user_model import User
 from schemas.common_schema import IMetaGeneral, TokenType
 from schemas.user_schema import IUserCreate, IUserRead
@@ -36,6 +36,11 @@ async def get_redis_client() -> Redis:
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
+        yield session
+
+
+async def get_db_by_schema(schema: str = None) -> AsyncGenerator[AsyncSession, None]:
+    async with SessionLocalBySchema(schema) as session:
         yield session
 
 
