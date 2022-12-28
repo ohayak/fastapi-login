@@ -13,7 +13,7 @@ from schemas.response_schema import (
     IGetResponsePaginated,
     IPostResponseBase,
     IPutResponseBase,
-    create_response,
+    create_response, IDeleteResponseBase,
 )
 from schemas.role_schema import IRoleEnum
 from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
@@ -23,8 +23,8 @@ router = APIRouter()
 
 @router.get("", response_model=IGetResponsePaginated[ICompanyRead])
 async def get_companies(
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
+        params: Params = Depends(),
+        current_user: User = Depends(deps.get_current_user()),
 ):
     """
     Gets a paginated list of companies
@@ -35,8 +35,8 @@ async def get_companies(
 
 @router.get("/{company_id}", response_model=IGetResponseBase[ICompanyReadWithUsers])
 async def get_company_by_id(
-    company_id: UUID,
-    current_user: User = Depends(deps.get_current_user()),
+        company_id: UUID,
+        current_user: User = Depends(deps.get_current_user()),
 ):
     """
     Gets a company by its id
@@ -54,8 +54,8 @@ async def get_company_by_id(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_company(
-    company: ICompanyCreate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+        company: ICompanyCreate,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Creates a new company
@@ -69,9 +69,9 @@ async def create_company(
 
 @router.put("/{company_id}", response_model=IPutResponseBase[ICompanyRead])
 async def update_company(
-    company_id: UUID,
-    company: ICompanyUpdate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+        company_id: UUID,
+        company: ICompanyUpdate,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Updates a company by its id
@@ -89,9 +89,9 @@ async def update_company(
 
 @router.post("/add_user/{user_id}/{company_id}", response_model=IPostResponseBase[ICompanyRead])
 async def add_user_into_a_company(
-    user_id: UUID,
-    company_id: UUID,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+        user_id: UUID,
+        company_id: UUID,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Adds a user into a company
@@ -106,3 +106,38 @@ async def add_user_into_a_company(
 
     company = await crud.company.add_user_to_company(user=user, company_id=company_id)
     return create_response(message="User added to company", data=company)
+
+
+@router.post("/romeve_user/{user_id}/{company_id}", response_model=IPostResponseBase[ICompanyRead])
+async def remove_user_from_company(
+        user_id: UUID,
+        company_id: UUID,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+):
+    """
+    remove  user from  company list
+    """
+    user = await crud.user.get(id=user_id)
+    if not user:
+        raise IdNotFoundException(User, id=user_id)
+    company = await crud.company.get(id=company_id)
+    if not company:
+        raise IdNotFoundException(Company, company_id)
+    company = await crud.company.remove_user(user=user, company_id=company_id)
+    return create_response(message="User removed from company", data=company)
+
+
+@router.delete("/{company_id}", response_model=IDeleteResponseBase[ICompanyRead])
+async def remove_compamy(
+        company_id: UUID,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+):
+    """
+    Deletes a role by id
+    """
+    company = await crud.company.get(id=company_id)
+    if not company:
+        raise IdNotFoundException(Company, company_id)
+
+    company = await crud.company.remove(id=company_id)
+    return create_response(data=company)

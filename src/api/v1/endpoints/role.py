@@ -12,7 +12,7 @@ from schemas.response_schema import (
     IGetResponsePaginated,
     IPostResponseBase,
     IPutResponseBase,
-    create_response,
+    create_response, IDeleteResponseBase,
 )
 from schemas.role_schema import IRoleCreate, IRoleEnum, IRoleRead, IRoleUpdate
 from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
@@ -22,8 +22,8 @@ router = APIRouter()
 
 @router.get("", response_model=IGetResponsePaginated[IRoleRead])
 async def get_roles(
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
+        params: Params = Depends(),
+        current_user: User = Depends(deps.get_current_user()),
 ):
     """
     Gets a paginated list of roles
@@ -38,8 +38,8 @@ async def get_roles(
     status_code=status.HTTP_200_OK,
 )
 async def get_role_by_id(
-    role_id: UUID,
-    current_user: User = Depends(deps.get_current_user()),
+        role_id: UUID,
+        current_user: User = Depends(deps.get_current_user()),
 ):
     """
     Gets a role by its id
@@ -53,8 +53,8 @@ async def get_role_by_id(
 
 @router.post("", response_model=IPostResponseBase[IRoleRead], status_code=status.HTTP_201_CREATED)
 async def create_role(
-    role: IRoleCreate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+        role: IRoleCreate,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Create a new role
@@ -69,9 +69,9 @@ async def create_role(
 
 @router.put("/{role_id}", response_model=IPutResponseBase[IRoleRead])
 async def update_permission(
-    role_id: UUID,
-    role: IRoleUpdate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+        role_id: UUID,
+        role: IRoleUpdate,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Updates the permission of a role by its id
@@ -89,3 +89,18 @@ async def update_permission(
 
     updated_role = await crud.role.update(obj_current=current_role, obj_new=role)
     return create_response(data=updated_role)
+
+
+@router.delete("/{role_id}", response_model=IDeleteResponseBase[IRoleRead])
+async def remove_role(
+        role_id: UUID,
+        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+):
+    """
+    Deletes a role by id
+    """
+    role = await crud.role.get(id=role_id)
+    if not role:
+        raise IdNotFoundException(Role, role_id)
+    role = await crud.role.remove(id=role_id)
+    return create_response(data=role)
