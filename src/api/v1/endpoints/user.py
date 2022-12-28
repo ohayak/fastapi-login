@@ -1,4 +1,3 @@
-import logging
 from io import BytesIO
 from typing import Optional
 from uuid import UUID
@@ -21,8 +20,12 @@ from schemas.response_schema import (
 )
 from schemas.role_schema import IRoleEnum
 from schemas.user_schema import IUserCreate, IUserRead, IUserReadWithoutGroups, IUserStatus
-from utils.exceptions import IdNotFoundException, NameNotFoundException, UserSelfDeleteException, \
-    ContentNoChangeException
+from utils.exceptions import (
+    ContentNoChangeException,
+    IdNotFoundException,
+    NameNotFoundException,
+    UserSelfDeleteException,
+)
 from utils.minio_client import MinioClient
 from utils.resize_image import modify_image
 
@@ -31,8 +34,8 @@ router = APIRouter()
 
 @router.get("/list", response_model=IGetResponsePaginated[IUserReadWithoutGroups])
 async def read_users_list(
-        params: Params = Depends(),
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+    params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Retrieve users. Requires admin or manager role
@@ -46,13 +49,13 @@ async def read_users_list(
     response_model=IGetResponsePaginated[IUserReadWithoutGroups],
 )
 async def read_users_list_by_role_name(
-        user_status: Optional[IUserStatus] = Query(
-            default=IUserStatus.active,
-            description="User status, It is optional. Default is active",
-        ),
-        role_name: str = Query(default="", description="String compare with name or last name"),
-        params: Params = Depends(),
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    user_status: Optional[IUserStatus] = Query(
+        default=IUserStatus.active,
+        description="User status, It is optional. Default is active",
+    ),
+    role_name: str = Query(default="", description="String compare with name or last name"),
+    params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Retrieve users by role name and status. Requires admin role
@@ -76,8 +79,8 @@ async def read_users_list_by_role_name(
     response_model=IGetResponsePaginated[IUserReadWithoutGroups],
 )
 async def get_user_list_order_by_created_at(
-        params: Params = Depends(),
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+    params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Gets a paginated list of users ordered by created datetime
@@ -88,8 +91,8 @@ async def get_user_list_order_by_created_at(
 
 @router.get("/{user_id}", response_model=IGetResponseBase[IUserRead])
 async def get_user_by_id(
-        user_id: UUID,
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+    user_id: UUID,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
     Gets a user by his/her id
@@ -102,7 +105,7 @@ async def get_user_by_id(
 
 @router.get("", response_model=IGetResponseBase[IUserRead])
 async def get_my_data(
-        current_user: User = Depends(deps.get_current_user()),
+    current_user: User = Depends(deps.get_current_user()),
 ):
     """
     Gets my user profile information
@@ -112,13 +115,13 @@ async def get_my_data(
 
 @router.post("", response_model=IPostResponseBase[IUserRead], status_code=status.HTTP_201_CREATED)
 async def create_user(
-        new_user: IUserCreate = Depends(deps.user_exists),
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    new_user: IUserCreate = Depends(deps.user_exists),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Creates a new user
     """
-    print(f"new role id {new_user}")
+
     role = await crud.role.get(id=new_user.role_id)
     if not role:
         raise IdNotFoundException(Role, id=new_user.role_id)
@@ -129,8 +132,8 @@ async def create_user(
 
 @router.delete("/{user_id}", response_model=IDeleteResponseBase[IUserRead])
 async def remove_user(
-        user: User = Depends(deps.is_valid_user),
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    user: User = Depends(deps.is_valid_user),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Deletes a user by his/her id
@@ -144,11 +147,11 @@ async def remove_user(
 
 # @router.post("/image", response_model=IPostResponseBase[IUserRead])
 async def upload_my_image(
-        title: Optional[str] = Body(None),
-        description: Optional[str] = Body(None),
-        image_file: UploadFile = File(...),
-        current_user: User = Depends(deps.get_current_user()),
-        minio_client: MinioClient = Depends(deps.minio_auth),
+    title: Optional[str] = Body(None),
+    description: Optional[str] = Body(None),
+    image_file: UploadFile = File(...),
+    current_user: User = Depends(deps.get_current_user()),
+    minio_client: MinioClient = Depends(deps.minio_auth),
 ):
     """
     Uploads a user image
@@ -170,18 +173,17 @@ async def upload_my_image(
         )
         return create_response(data=user)
     except Exception as e:
-        print(e)
-        return Response("Internal server error", status_code=500)
+        return Response(f"Internal server error {e}", status_code=500)
 
 
 # @router.post("/{user_id}/image", response_model=IPostResponseBase[IUserRead])
 async def upload_user_image(
-        user: User = Depends(deps.is_valid_user),
-        title: Optional[str] = Body(None),
-        description: Optional[str] = Body(None),
-        image_file: UploadFile = File(...),
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
-        minio_client: MinioClient = Depends(deps.minio_auth),
+    user: User = Depends(deps.is_valid_user),
+    title: Optional[str] = Body(None),
+    description: Optional[str] = Body(None),
+    image_file: UploadFile = File(...),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    minio_client: MinioClient = Depends(deps.minio_auth),
 ):
     """
     Uploads a user image by his/her id
@@ -203,15 +205,14 @@ async def upload_user_image(
         )
         return create_response(data=user)
     except Exception as e:
-        print(e)
-        return Response("Internal server error", status_code=500)
+        return Response(f"Internal server error {e}", status_code=500)
 
 
 @router.put("/{user_id}", response_model=IPutResponseBase[IUserRead])
 async def update_user_info(
-        user_id: UUID,
-        user: IUserRead,
-        current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    user_id: UUID,
+    user: IUserRead,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Updates user informations
@@ -220,13 +221,15 @@ async def update_user_info(
     if not current_user_data:
         raise IdNotFoundException(User, id=user_id)
 
-    if current_user_data.first_name == user.first_name and \
-            current_user_data.last_name == user.last_name and \
-            current_user_data.email == user.email and \
-            current_user_data.is_superuser == user.is_superuser and \
-            current_user_data.phone == user.phone and \
-            current_user_data.role_id == user.role_id and \
-            current_user_data.job == user.job:
+    if (
+        current_user_data.first_name == user.first_name
+        and current_user_data.last_name == user.last_name
+        and current_user_data.email == user.email
+        and current_user_data.is_superuser == user.is_superuser
+        and current_user_data.phone == user.phone
+        and current_user_data.role_id == user.role_id
+        and current_user_data.job == user.job
+    ):
         raise ContentNoChangeException()
 
     updated_user = await crud.user.update(obj_current=current_user_data, obj_new=user)
