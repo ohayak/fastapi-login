@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Params
+from sqlmodel import select
 
 import crud
 from api import deps

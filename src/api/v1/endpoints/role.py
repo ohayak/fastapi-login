@@ -8,6 +8,7 @@ from api import deps
 from models.role_model import Role
 from models.user_model import User
 from schemas.response_schema import (
+    IDeleteResponseBase,
     IGetResponseBase,
     IGetResponsePaginated,
     IPostResponseBase,
@@ -89,3 +90,18 @@ async def update_permission(
 
     updated_role = await crud.role.update(obj_current=current_role, obj_new=role)
     return create_response(data=updated_role)
+
+
+@router.delete("/{role_id}", response_model=IDeleteResponseBase[IRoleRead])
+async def remove_role(
+    role_id: UUID,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+):
+    """
+    Deletes a role by id
+    """
+    role = await crud.role.get(id=role_id)
+    if not role:
+        raise IdNotFoundException(Role, role_id)
+    role = await crud.role.remove(id=role_id)
+    return create_response(data=role)

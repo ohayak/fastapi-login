@@ -9,6 +9,7 @@ from models.company_model import Company
 from models.user_model import User
 from schemas.company_schema import ICompanyCreate, ICompanyRead, ICompanyReadWithUsers, ICompanyUpdate
 from schemas.response_schema import (
+    IDeleteResponseBase,
     IGetResponseBase,
     IGetResponsePaginated,
     IPostResponseBase,
@@ -106,3 +107,38 @@ async def add_user_into_a_company(
 
     company = await crud.company.add_user_to_company(user=user, company_id=company_id)
     return create_response(message="User added to company", data=company)
+
+
+@router.post("/romeve_user/{user_id}/{company_id}", response_model=IPostResponseBase[ICompanyRead])
+async def remove_user_from_company(
+    user_id: UUID,
+    company_id: UUID,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+):
+    """
+    remove  user from  company list
+    """
+    user = await crud.user.get(id=user_id)
+    if not user:
+        raise IdNotFoundException(User, id=user_id)
+    company = await crud.company.get(id=company_id)
+    if not company:
+        raise IdNotFoundException(Company, company_id)
+    company = await crud.company.remove_user(user=user, company_id=company_id)
+    return create_response(message="User removed from company", data=company)
+
+
+@router.delete("/{company_id}", response_model=IDeleteResponseBase[ICompanyRead])
+async def remove_compamy(
+    company_id: UUID,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+):
+    """
+    Deletes a role by id
+    """
+    company = await crud.company.get(id=company_id)
+    if not company:
+        raise IdNotFoundException(Company, company_id)
+
+    company = await crud.company.remove(id=company_id)
+    return create_response(data=company)

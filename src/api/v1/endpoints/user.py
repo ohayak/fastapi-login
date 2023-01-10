@@ -20,7 +20,12 @@ from schemas.response_schema import (
 )
 from schemas.role_schema import IRoleEnum
 from schemas.user_schema import IUserCreate, IUserRead, IUserReadWithoutGroups, IUserStatus
-from utils.exceptions import IdNotFoundException, NameNotFoundException, UserSelfDeleteException
+from utils.exceptions import (
+    ContentNoChangeException,
+    IdNotFoundException,
+    NameNotFoundException,
+    UserSelfDeleteException,
+)
 from utils.minio_client import MinioClient
 from utils.resize_image import modify_image
 
@@ -168,8 +173,7 @@ async def upload_my_image(
         )
         return create_response(data=user)
     except Exception as e:
-        print(e)
-        return Response("Internal server error", status_code=500)
+        return Response(f"Internal server error {e}", status_code=500)
 
 
 # @router.post("/{user_id}/image", response_model=IPostResponseBase[IUserRead])
@@ -201,5 +205,32 @@ async def upload_user_image(
         )
         return create_response(data=user)
     except Exception as e:
-        print(e)
-        return Response("Internal server error", status_code=500)
+        return Response(f"Internal server error {e}", status_code=500)
+
+
+@router.put("/{user_id}", response_model=IPutResponseBase[IUserRead])
+async def update_user_info(
+    user_id: UUID,
+    user: IUserRead,
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+):
+    """
+    Updates user informations
+    """
+    current_user_data = await crud.user.get(id=user_id)
+    if not current_user_data:
+        raise IdNotFoundException(User, id=user_id)
+
+    if (
+        current_user_data.first_name == user.first_name
+        and current_user_data.last_name == user.last_name
+        and current_user_data.email == user.email
+        and current_user_data.is_superuser == user.is_superuser
+        and current_user_data.phone == user.phone
+        and current_user_data.role_id == user.role_id
+        and current_user_data.job == user.job
+    ):
+        raise ContentNoChangeException()
+
+    updated_user = await crud.user.update(obj_current=current_user_data, obj_new=user)
+    return create_response(data=updated_user)

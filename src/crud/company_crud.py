@@ -51,5 +51,14 @@ class CRUDCompany(CRUDBase[Company, ICompanyCreate, ICompanyUpdate]):
         await db_session.refresh(company)
         return company
 
+    async def remove_user(self, *, user: User, company_id: UUID, db_session: Optional[AsyncSession] = None) -> Company:
+        db_session = db_session or db.session
+        company = await super().get(id=company_id)
+        company.users.remove(user)
+        db_session.add(company)
+        await db_session.commit()
+        await db_session.refresh(company)
+        return company
+
 
 company = CRUDCompany(Company)
