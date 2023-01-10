@@ -38,7 +38,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_db_by_schema(schema: str = None) -> AsyncGenerator[AsyncSession, None]:
-    async with data_session_by_schema(schema)() as session:
+    async with data_session_by_schema(schema) as session:
         yield session
 
 

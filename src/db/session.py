@@ -27,7 +27,7 @@ SessionLocal = sessionmaker(
 )
 
 
-def data_session_by_schema(schema: str = None):
+def data_session_by_schema(schema: str = None) -> AsyncSession:
     search_path = f"{schema},public" if schema else "public"
     engine = create_async_engine(
         settings.ASYNC_DB_DATA_URI,
@@ -44,4 +44,4 @@ def data_session_by_schema(schema: str = None):
         class_=AsyncSession,
         expire_on_commit=False,
     )
-    return session
+    return session()
