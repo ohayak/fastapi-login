@@ -27,18 +27,21 @@ SessionLocal = sessionmaker(
 )
 
 
-class SessionLocalBySchema(AsyncSession):
-    def __call__(schema: str = None) -> AsyncSession:
-        search_path = f"{schema},public" if schema else "public"
-        engine = create_async_engine(
-            settings.ASYNC_DB_DATA_URI,
-            echo=False,
-            future=True,
-            pool_size=POOL_SIZE,
-            max_overflow=64,
-            connect_args={"options": f"-csearch_path={search_path}"},
-        )
-        session = super().__call__(
-            autocommit=False, autoflush=False, bind=engine, class_=AsyncSession, expire_on_commit=False
-        )
-        return session
+def data_session_by_schema(schema: str = None):
+    search_path = f"{schema},public" if schema else "public"
+    engine = create_async_engine(
+        settings.ASYNC_DB_DATA_URI,
+        echo=False,
+        future=True,
+        pool_size=POOL_SIZE,
+        max_overflow=64,
+        connect_args={"server_settings": {"search_path": search_path}},
+    )
+    session = sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    return session

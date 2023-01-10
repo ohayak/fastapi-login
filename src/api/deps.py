@@ -1,4 +1,3 @@
-import logging
 from typing import AsyncGenerator, List
 from uuid import UUID
 
@@ -13,7 +12,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import crud
 from core import security
 from core.config import settings
-from db.session import SessionLocal, SessionLocalBySchema
+from db.session import SessionLocal, data_session_by_schema
 from models.user_model import User
 from schemas.common_schema import IMetaGeneral, TokenType
 from schemas.user_schema import IUserCreate, IUserRead
@@ -30,7 +29,6 @@ async def get_redis_client() -> Redis:
         encoding="utf8",
         decode_responses=True,
     )
-    logging.debug(redis)
     return redis
 
 
@@ -40,7 +38,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_db_by_schema(schema: str = None) -> AsyncGenerator[AsyncSession, None]:
-    async with SessionLocalBySchema(schema) as session:
+    async with data_session_by_schema(schema)() as session:
         yield session
 
 

@@ -5,16 +5,9 @@ from fastapi_pagination import Params
 
 import crud
 from api import deps
-from models.battery_model import BatteryCell, BatteryEvolution, BatteryInfo, BatteryModel, BatteryReview, BatteryState
+from models.battery_model import BatteryCell, BatteryInfo, BatteryModel
 from models.user_model import User
-from schemas.battery_schema import (
-    IBatteryCellRead,
-    IBatteryEvolutionRead,
-    IBatteryInfoRead,
-    IBatteryModelRead,
-    IBatteryReviewRead,
-    IBatteryStateRead,
-)
+from schemas.battery_schema import IBatteryCellRead, IBatteryInfoRead, IBatteryModelRead
 from schemas.response_schema import (
     IGetResponseBase,
     IGetResponsePaginated,
@@ -114,106 +107,106 @@ async def get_info_by_id(
         raise IdNotFoundException(BatteryInfo, id=info_id)
 
 
-@router.get("/review/{schema}", response_model=IGetResponsePaginated[IBatteryReviewRead])
-async def get_reviews(
-    schema: str,
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
-    db=Depends(deps.get_db_by_schema),
-):
-    """
-    Gets a paginated list of reviews
-    """
-    reviews = await crud.batreview.get_multi_paginated(params=params, db_session=db)
-    return create_response(data=reviews)
+# @router.get("/review/{schema}", response_model=IGetResponsePaginated[IBatteryReviewRead])
+# async def get_reviews(
+#     schema: str,
+#     params: Params = Depends(),
+#     current_user: User = Depends(deps.get_current_user()),
+#     db=Depends(deps.get_db_by_schema),
+# ):
+#     """
+#     Gets a paginated list of reviews
+#     """
+#     reviews = await crud.batreview.get_multi_paginated(params=params, db_session=db)
+#     return create_response(data=reviews)
 
 
-@router.get(
-    "/review/{schema}/{review_id}",
-    response_model=IGetResponseBase[IBatteryReviewRead],
-    status_code=status.HTTP_200_OK,
-)
-async def get_review_by_id(
-    review_id: UUID,
-    schema: str,
-    current_user: User = Depends(deps.get_current_user()),
-    db=Depends(deps.get_db_by_schema),
-):
-    """
-    Gets a review by its id
-    """
-    review = await crud.batreview.get(id=review_id, db_session=db)
-    if review:
-        return create_response(data=review)
-    else:
-        raise IdNotFoundException(BatteryReview, id=review_id)
+# @router.get(
+#     "/review/{schema}/{review_id}",
+#     response_model=IGetResponseBase[IBatteryReviewRead],
+#     status_code=status.HTTP_200_OK,
+# )
+# async def get_review_by_id(
+#     review_id: UUID,
+#     schema: str,
+#     current_user: User = Depends(deps.get_current_user()),
+#     db=Depends(deps.get_db_by_schema),
+# ):
+#     """
+#     Gets a review by its id
+#     """
+#     review = await crud.batreview.get(id=review_id, db_session=db)
+#     if review:
+#         return create_response(data=review)
+#     else:
+#         raise IdNotFoundException(BatteryReview, id=review_id)
 
 
-@router.get("/state/{schema}", response_model=IGetResponsePaginated[IBatteryStateRead])
-async def get_states(
-    schema: str,
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
-    db=Depends(deps.get_db_by_schema),
-):
-    """
-    Gets a paginated list of states
-    """
-    states = await crud.batmodel.get_multi_paginated(params=params, db_session=db)
-    return create_response(data=states)
+# @router.get("/state/{schema}", response_model=IGetResponsePaginated[IBatteryStateRead])
+# async def get_states(
+#     schema: str,
+#     params: Params = Depends(),
+#     current_user: User = Depends(deps.get_current_user()),
+#     db=Depends(deps.get_db_by_schema),
+# ):
+#     """
+#     Gets a paginated list of states
+#     """
+#     states = await crud.batmodel.get_multi_paginated(params=params, db_session=db)
+#     return create_response(data=states)
 
 
-@router.get(
-    "/state/{schema}/{state_id}",
-    response_model=IGetResponseBase[IBatteryStateRead],
-    status_code=status.HTTP_200_OK,
-)
-async def get_state_by_id(
-    state_id: UUID,
-    schema: str,
-    current_user: User = Depends(deps.get_current_user()),
-    db=Depends(deps.get_db_by_schema),
-):
-    """
-    Gets a state by its id
-    """
-    state = await crud.batstate.get(id=state_id, db_session=db)
-    if state:
-        return create_response(data=state)
-    else:
-        raise IdNotFoundException(BatteryState, id=state_id)
+# @router.get(
+#     "/state/{schema}/{state_id}",
+#     response_model=IGetResponseBase[IBatteryStateRead],
+#     status_code=status.HTTP_200_OK,
+# )
+# async def get_state_by_id(
+#     state_id: UUID,
+#     schema: str,
+#     current_user: User = Depends(deps.get_current_user()),
+#     db=Depends(deps.get_db_by_schema),
+# ):
+#     """
+#     Gets a state by its id
+#     """
+#     state = await crud.batstate.get(id=state_id, db_session=db)
+#     if state:
+#         return create_response(data=state)
+#     else:
+#         raise IdNotFoundException(BatteryState, id=state_id)
 
 
-@router.get("/evolution/{schema}", response_model=IGetResponsePaginated[IBatteryEvolutionRead])
-async def get_evolutions(
-    schema: str,
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
-    db=Depends(deps.get_db_by_schema),
-):
-    """
-    Gets a paginated list of evolutions
-    """
-    evolustions = await crud.batmodel.get_multi_paginated(params=params, db_session=db)
-    return create_response(data=evolustions)
+# @router.get("/evolution/{schema}", response_model=IGetResponsePaginated[IBatteryEvolutionRead])
+# async def get_evolutions(
+#     schema: str,
+#     params: Params = Depends(),
+#     current_user: User = Depends(deps.get_current_user()),
+#     db=Depends(deps.get_db_by_schema),
+# ):
+#     """
+#     Gets a paginated list of evolutions
+#     """
+#     evolustions = await crud.batmodel.get_multi_paginated(params=params, db_session=db)
+#     return create_response(data=evolustions)
 
 
-@router.get(
-    "/evolution/{schema}/{evolution_id}",
-    response_model=IGetResponseBase[IBatteryEvolutionRead],
-    status_code=status.HTTP_200_OK,
-)
-async def get_evolution_by_id(
-    evolution_id: UUID,
-    schema: str,
-    current_user: User = Depends(deps.get_current_user()),
-    db=Depends(deps.get_db_by_schema),
-):
-    """
-    Gets a evolution by its id
-    """
-    evolution = await crud.batevolution.get(id=evolution_id, db_session=db)
-    if evolution:
-        return create_response(data=evolution)
-    else:
-        raise IdNotFoundException(BatteryEvolution, id=evolution_id)
+# @router.get(
+#     "/evolution/{schema}/{evolution_id}",
+#     response_model=IGetResponseBase[IBatteryEvolutionRead],
+#     status_code=status.HTTP_200_OK,
+# )
+# async def get_evolution_by_id(
+#     evolution_id: UUID,
+#     schema: str,
+#     current_user: User = Depends(deps.get_current_user()),
+#     db=Depends(deps.get_db_by_schema),
+# ):
+#     """
+#     Gets a evolution by its id
+#     """
+#     evolution = await crud.batevolution.get(id=evolution_id, db_session=db)
+#     if evolution:
+#         return create_response(data=evolution)
+#     else:
+#         raise IdNotFoundException(BatteryEvolution, id=evolution_id)
