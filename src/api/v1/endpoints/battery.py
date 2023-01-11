@@ -1,9 +1,11 @@
+import logging
 from uuid import UUID
-
+from databases import Database
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Params
+from sqlalchemy import databases
 from sqlmodel import select
-
+from core.config import settings
 import crud
 from api import deps
 from models.battery_model import BatteryCell, BatteryInfo, BatteryModel
@@ -23,7 +25,8 @@ router = APIRouter()
 
 @router.get("/cell", response_model=IGetResponsePaginated[IBatteryCellRead])
 async def get_cells(
-    params: Params = Depends(), current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+        params: Params = Depends(), current_user: User = Depends(deps.get_current_user()),
+        db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a paginated list of cells
@@ -38,7 +41,7 @@ async def get_cells(
     status_code=status.HTTP_200_OK,
 )
 async def get_cell_by_id(
-    cell_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+        cell_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a cell by its id
@@ -52,7 +55,8 @@ async def get_cell_by_id(
 
 @router.get("/model", response_model=IGetResponsePaginated[IBatteryModelRead])
 async def get_models(
-    params: Params = Depends(), current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+        params: Params = Depends(), current_user: User = Depends(deps.get_current_user()),
+        db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a paginated list of models
@@ -67,7 +71,7 @@ async def get_models(
     status_code=status.HTTP_200_OK,
 )
 async def get_model_by_id(
-    model_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+        model_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a model by its id
@@ -81,12 +85,27 @@ async def get_model_by_id(
 
 @router.get("/info", response_model=IGetResponsePaginated[IBatteryInfoRead])
 async def get_infos(
-    params: Params = Depends(), current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+        params: Params = Depends(), current_user: User = Depends(deps.get_current_user()),
+        db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a paginated list of infos
     """
     infos = await crud.batinfo.get_multi_paginated(params=params, db_session=db)
+    return create_response(data=infos)
+
+
+@router.get("/info", response_model=IGetResponsePaginated[IBatteryInfoRead])
+async def get_infos(
+        params: Params = Depends(), current_user: User = Depends(deps.get_current_user()),
+        db=Depends(deps.get_db_by_schema)
+):
+    """
+    Gets a paginated list of infos
+    """
+    logging.debug("passed")
+    infos = await crud.batinfo.get_multi_paginated(params=params, db_session=db)
+    logging.debug(infos)
     return create_response(data=infos)
 
 
@@ -96,7 +115,26 @@ async def get_infos(
     status_code=status.HTTP_200_OK,
 )
 async def get_info_by_id(
-    info_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+        info_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+):
+    """
+    Gets a model by its id
+    """
+
+    info = await crud.batinfo.get(id=info_id, db_session=db)
+    if info:
+        return create_response(data=info)
+    else:
+        raise IdNotFoundException(BatteryInfo, id=info_id)
+
+
+@router.get(
+    "/info/{info_id}",
+    response_model=IGetResponseBase[IBatteryInfoRead],
+    status_code=status.HTTP_200_OK,
+)
+async def get_info_by_id(
+        info_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a model by its id
@@ -106,6 +144,39 @@ async def get_info_by_id(
         return create_response(data=info)
     else:
         raise IdNotFoundException(BatteryInfo, id=info_id)
+
+
+@router.get("/filter_with_soh/{soh_min}/{soh_max}")
+async def filter_by_soh(soh_min: float, soh_max: float,
+                        current_user: User = Depends(deps.get_current_user()),
+                        params: Params = Depends(),
+                        db=Depends(deps.get_db_by_schema)):
+    """
+        Gets a paginated list of evolutions filtred by soh
+        """
+    query = f'SELECT * FROM exotec."BatteryReview" WHERE (soh >= :soh_min AND soh <= :soh_max)'
+    print(f"db url {settings.ASYNC_DB_DATA_URI}")
+    database = Database(settings.ASYNC_DB_DATA_URI)
+    await database.connect()
+    data = await database.fetch_all(query=query, values={"soh_min": soh_min, "soh_max": soh_max})
+    print(data)
+    print(f"result {type(data)}")
+    return data
+
+#
+
+
+# @router.get("/filter_with_/{waranty}",)
+# async def filter_by_soh(soh_min: float, soh_max: float,
+#                         current_user: User = Depends(deps.get_current_user()),
+#                         params: Params = Depends(),
+#                         db=Depends(deps.get_db_by_schema)):
+#     """
+#         Gets a paginated list of evolutions filtred by soh
+#         """
+#     var = db.execute("SELECT * FROM exotec.BatteryReview;")
+#     print(type(var))
+#     return create_response()
 
 
 # @router.get("/review/{schema}", response_model=IGetResponsePaginated[IBatteryReviewRead])
