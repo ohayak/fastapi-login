@@ -1,12 +1,11 @@
 from typing import AsyncGenerator, List
 from uuid import UUID
 
-import aioredis
-from aioredis import Redis
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
+from redis.asyncio import Redis, from_url
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import crud
@@ -23,7 +22,7 @@ reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/ac
 
 
 async def get_redis_client() -> Redis:
-    redis = aioredis.from_url(
+    redis = from_url(
         f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
         max_connections=10,
         encoding="utf8",
@@ -82,7 +81,7 @@ def get_current_user(required_roles: List[str] = None) -> User:
             if not is_valid_role:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"""Role "{required_roles}" is required for this action""",
+                    detail=f"Role {required_roles} is required for this action",
                 )
 
         return user

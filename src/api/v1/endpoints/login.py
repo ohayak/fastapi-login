@@ -1,12 +1,12 @@
 from datetime import timedelta
 from typing import Any
 
-from aioredis import Redis
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from pydantic import EmailStr, ValidationError
+from redis.asyncio import Redis
 
 import crud
 from api import deps
