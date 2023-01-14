@@ -23,16 +23,11 @@ from utils.token import add_token_to_redis, delete_tokens, get_valid_tokens
 router = APIRouter()
 
 
-@router.post("/signin", response_model=IPostResponseBase[Token])
-async def login(
-    email: EmailStr = Body(...),
-    password: str = Body(...),
-    meta_data: IMetaGeneral = Depends(deps.get_general_meta),
-    redis_client: Redis = Depends(get_redis_client),
-) -> Any:
-    """
-    Login for all users
-    """
+async def _login_token(
+    email: str,
+    password: str,
+    redis_client: Redis,
+) -> Token:
     user = await crud.user.authenticate(email=email, password=password)
     if not user:
         raise HTTPException(status_code=400, detail="Email or Password incorrect")
@@ -67,6 +62,31 @@ async def login(
             settings.REFRESH_TOKEN_EXPIRE_MINUTES,
         )
 
+    return data
+
+
+@router.post("/token", response_model=Token)
+async def login_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    redis_client: Redis = Depends(get_redis_client),
+) -> Any:
+    """
+    OAuth2 compatible token login, get an access token for future requests
+    """
+    return await _login_token(form_data.username, form_data.password, redis_client)
+
+
+@router.post("/signin", response_model=IPostResponseBase[Token])
+async def login(
+    email: EmailStr = Body(...),
+    password: str = Body(...),
+    meta_data: IMetaGeneral = Depends(deps.get_general_meta),
+    redis_client: Redis = Depends(get_redis_client),
+) -> Any:
+    """
+    Login for all users
+    """
+    data = await _login_token(email, password, redis_client)
     return create_response(meta=meta_data, data=data, message="Login correctly")
 
 
@@ -177,47 +197,3 @@ async def refresh_token(
             raise HTTPException(status_code=404, detail="User inactive")
     else:
         raise HTTPException(status_code=404, detail="Incorrect token")
-
-
-@router.post("/token", response_model=Token)
-async def oauth2_login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    redis_client: Redis = Depends(get_redis_client),
-) -> Any:
-    """
-    OAuth2 compatible token login, get an access token for future requests
-    """
-    user = await crud.user.authenticate(email=form_data.username, password=form_data.password)
-    if not user:
-        raise HTTPException(status_code=400, detail="Email or Password incorrect")
-    elif not user.is_active:
-        raise HTTPException(status_code=400, detail="User is inactive")
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(user.id, expires_delta=access_token_expires)
-    refresh_token = security.create_refresh_token(user.id, expires_delta=refresh_token_expires)
-    data = Token(
-        access_token=access_token,
-        token_type="bearer",
-        refresh_token=refresh_token,
-        user=user,
-    )
-    valid_access_tokens = await get_valid_tokens(redis_client, user.id, TokenType.ACCESS)
-    if valid_access_tokens:
-        await add_token_to_redis(
-            redis_client,
-            user,
-            access_token,
-            TokenType.ACCESS,
-            settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-        )
-    valid_refresh_tokens = await get_valid_tokens(redis_client, user.id, TokenType.REFRESH)
-    if valid_refresh_tokens:
-        await add_token_to_redis(
-            redis_client,
-            user,
-            refresh_token,
-            TokenType.REFRESH,
-            settings.REFRESH_TOKEN_EXPIRE_MINUTES,
-        )
-    return data
