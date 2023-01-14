@@ -13,13 +13,15 @@ engine = create_engine(
 )
 
 
-class UUIDBase(object):
+class _Base(object):
     @declared_attr
     def __tablename__(cls) -> str:
         return cls.__name__
 
     __table_args__ = {"autoload_with": engine}
 
+
+class _UUIDBase(_Base):
     id = Column(
         "id",
         UUID(as_uuid=True),
@@ -27,7 +29,8 @@ class UUIDBase(object):
     )
 
 
-Base = declarative_base(cls=UUIDBase)
+Base = declarative_base(cls=_Base)
+UUIDBase = declarative_base(cls=_UUIDBase)
 
 
 class BatteryStateEnum(str, Enum):
@@ -53,19 +56,19 @@ class BatteryStatusEnum(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class BatteryCompany(Base):
+class BatteryCompany(UUIDBase):
     ...
 
 
-class BatteryMedia(Base):
+class BatteryMedia(UUIDBase):
     ...
 
 
-class BatteryCell(Base):
+class BatteryCell(UUIDBase):
     ...
 
 
-class BatteryModel(Base):
+class BatteryModel(UUIDBase):
     ...
 
 
@@ -77,14 +80,14 @@ class CompanyData(Base):
     ...
 
 
-class BatteryReview(Base):
+class BatteryReview(UUIDBase):
     ...
 
 
-class BatteryState(Base):
+class BatteryState(UUIDBase):
     state = Column(saEnum(BatteryStateEnum))
     incident = Column(saEnum(BatteryIncidentEnum))
 
 
-class BatteryEvolution(Base):
+class BatteryEvolution(UUIDBase):
     status = Column(saEnum(BatteryStatusEnum))

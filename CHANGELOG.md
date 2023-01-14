@@ -8,8 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 
-- battery
+- battery endpoints
+
+## [1.1.0]
+
+- battery models are loaded at runtime
 - add contact to company
+- python 3.11
 
 ## [1.0.0]
 

@@ -48,7 +48,7 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             first_name="Operator",
             last_name="FastAPI",
             password="operator",
-            email="operator@exitec.com",
+            email="operator@exotec.com",
             is_superuser=False,
         ),
         "role": "operator",
