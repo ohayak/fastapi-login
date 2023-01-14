@@ -8,7 +8,7 @@ from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import exc
-from sqlmodel import SQLModel, func, select
+from sqlmodel import SQLModel, and_, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
@@ -100,6 +100,47 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 query = select(self.model).order_by(columns[order_by].asc())
             else:
                 query = select(self.model).order_by(columns[order_by].desc())
+
+        return await paginate(db_session, query, params)
+
+    async def get_multi_filtered_paginated_ordered(
+        self,
+        *,
+        filter_by: str,
+        min: Union[int, float, None] = None,
+        max: Union[int, float, None] = None,
+        eq: Any = None,
+        params: Optional[Params] = Params(),
+        order_by: Optional[str] = None,
+        order: Optional[IOrderEnum] = IOrderEnum.ascendent,
+        query: Optional[Union[T, Select[T]]] = None,
+        db_session: Optional[AsyncSession] = None,
+    ) -> Page[ModelType]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        if filter_by not in columns or filter_by is None:
+            raise HTTPException(
+                status_code=409,
+                detail="filter_by must be a valid value",
+            )
+
+        if order_by not in columns or order_by is None:
+            order_by = self.model.id
+
+        if query is None:
+            criteria = ()
+            if min:
+                criteria = and_(criteria, columns[filter_by] >= min)
+            if max:
+                criteria = and_(criteria, columns[filter_by] <= max)
+            if eq:
+                criteria = columns[filter_by] == eq
+            if order == IOrderEnum.ascendent:
+                query = select(self.model).where(criteria).order_by(columns[order_by].asc())
+            else:
+                query = select(self.model).where(criteria).order_by(columns[order_by].desc())
 
         return await paginate(db_session, query, params)
 

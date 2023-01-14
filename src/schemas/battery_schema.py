@@ -1,32 +1,19 @@
-from models.battery_model import BatteryCell, BatteryInfo, BatteryModel
+from models.battery_model import BatteryCell, BatteryEvolution, BatteryInfo, BatteryModel, BatteryReview, BatteryState
 from utils.make_model import Model, make_schema_from_orm
-
-# class IBatteryCellRead(BatteryCell):
-#     pass
-
 
 IBatteryCellRead: Model = make_schema_from_orm(BatteryCell, model_name="IBatteryCellRead")
 
 
-# class IBatteryModelRead(BatteryModel):
-#     pass
-
 IBatteryModelRead: Model = make_schema_from_orm(BatteryModel, model_name="IBatteryModelRead")
 
-
-# class IBatteryInfoRead(BatteryInfo):
-#     pass
 
 IBatteryInfoRead: Model = make_schema_from_orm(BatteryInfo, model_name="IBatteryInfoRead")
 
 
-# class IBatteryEvolutionRead(BatteryEvolution):
-#     pass
+IBatteryEvolutionRead: Model = make_schema_from_orm(BatteryEvolution, model_name="IBatteryEvolutionRead")
 
 
-# class IBatteryReviewRead(BatteryReview):
-#     pass
+IBatteryReviewRead: Model = make_schema_from_orm(BatteryReview, model_name="IBatteryReviewRead")
 
 
-# class IBatteryStateRead(BatteryState):
-#     pass
+IBatteryStateRead: Model = make_schema_from_orm(BatteryState, model_name="IBatteryStateRead")

@@ -33,9 +33,10 @@ class Settings(BaseSettings):
     DB_DATA_PORT: Union[int, str] = 5432
     DB_DATA_NAME: str = "data"
     ASYNC_DB_DATA_URI: Optional[str]
+    DB_DATA_URI: Optional[str]
 
     @validator("ASYNC_DB_AUTH_URI", pre=True)
-    def assemble_db_auth_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    def assemble_async_db_auth_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
@@ -48,7 +49,7 @@ class Settings(BaseSettings):
         )
 
     @validator("ASYNC_DB_SCHEDULER_URI", pre=True)
-    def assemble_DB_SCHEDULER_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    def assemble_async_db_scheduler_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
@@ -61,11 +62,24 @@ class Settings(BaseSettings):
         )
 
     @validator("ASYNC_DB_DATA_URI", pre=True)
-    def assemble_db_data_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    def assemble_async_db_data_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
             scheme="postgresql+asyncpg",
+            user=values.get("DB_DATA_USER"),
+            password=values.get("DB_DATA_PASSWORD"),
+            host=values.get("DB_DATA_HOST"),
+            port=str(values.get("DB_DATA_PORT")),
+            path=f"/{values.get('DB_DATA_NAME') or ''}",
+        )
+
+    @validator("DB_DATA_URI", pre=True)
+    def assemble_db_data_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+        if isinstance(v, str):
+            return v
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg2",
             user=values.get("DB_DATA_USER"),
             password=values.get("DB_DATA_PASSWORD"),
             host=values.get("DB_DATA_HOST"),
