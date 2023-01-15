@@ -100,7 +100,7 @@ async def get_infos(
 
 @router.get(
     "/{schema}/evolution/filter",
-    response_model=IGetResponseBase[IBatteryEvolutionRead],
+    response_model=IGetResponsePaginated[IBatteryEvolutionRead],
 )
 async def get_evolution_filtered(
     schema: str,
@@ -125,7 +125,7 @@ async def get_evolution_filtered(
 
 @router.get(
     "/{schema}/review/filter",
-    response_model=IGetResponseBase[IBatteryReviewRead],
+    response_model=IGetResponsePaginated[IBatteryReviewRead],
 )
 async def get_review_filtered(
     schema: str,
@@ -150,7 +150,7 @@ async def get_review_filtered(
 
 @router.get(
     "/{schema}/state/filter",
-    response_model=IGetResponseBase[IBatteryStateRead],
+    response_model=IGetResponsePaginated[IBatteryStateRead],
 )
 async def get_state_filtered(
     schema: str,
