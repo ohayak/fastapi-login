@@ -1,9 +1,8 @@
 from datetime import timedelta
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
-from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from pydantic import EmailStr, ValidationError
 from redis.asyncio import Redis
@@ -23,7 +22,29 @@ from utils.token import add_token_to_redis, delete_tokens, get_valid_tokens
 router = APIRouter()
 
 
-async def _login_token(
+class OAuth2PasswordRequestForm:
+    """Modified from fastapi.security.OAuth2PasswordRequestForm"""
+
+    def __init__(
+        self,
+        grant_type: str = Form(default=None, regex="password|refresh_token"),
+        username: str = Form(default=""),
+        password: str = Form(default=""),
+        refresh_token: str = Form(default=""),
+        scope: str = Form(default=""),
+        client_id: str | None = Form(default=None),
+        client_secret: str | None = Form(default=None),
+    ):
+        self.grant_type = grant_type
+        self.username = username
+        self.password = password
+        self.refresh_token = refresh_token
+        self.scopes = scope.split()
+        self.client_id = client_id
+        self.client_secret = client_secret
+
+
+async def _access_token(
     email: str,
     password: str,
     redis_client: Redis,
@@ -41,6 +62,7 @@ async def _login_token(
         access_token=access_token,
         token_type="bearer",
         refresh_token=refresh_token,
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=user,
     )
     valid_access_tokens = await get_valid_tokens(redis_client, user.id, TokenType.ACCESS)
@@ -65,15 +87,61 @@ async def _login_token(
     return data
 
 
+async def _refresh_token(
+    refresh_token: str,
+    redis_client: Redis,
+) -> Token:
+    try:
+        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
+    except (jwt.JWTError, ValidationError):
+        raise HTTPException(status_code=403, detail="Refresh token invalid")
+
+    if payload["type"] == "refresh":
+        user_id = payload["sub"]
+        valid_refresh_tokens = await get_valid_tokens(redis_client, user_id, TokenType.REFRESH)
+        if valid_refresh_tokens and refresh_token not in valid_refresh_tokens:
+            raise HTTPException(status_code=403, detail="Refresh token invalid")
+
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        user = await crud.user.get(id=user_id)
+        if user.is_active:
+            access_token = security.create_access_token(payload["sub"], expires_delta=access_token_expires)
+            valid_access_get_valid_tokens = await get_valid_tokens(redis_client, user.id, TokenType.ACCESS)
+            if valid_access_get_valid_tokens:
+                await add_token_to_redis(
+                    redis_client,
+                    user,
+                    access_token,
+                    TokenType.ACCESS,
+                    settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+                )
+            return Token(
+                access_token=access_token,
+                token_type="bearer",
+                expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                refresh_token=refresh_token,
+                user=user,
+            )
+        else:
+            raise HTTPException(status_code=404, detail="User inactive")
+    else:
+        raise HTTPException(status_code=404, detail="Incorrect token")
+
+
 @router.post("/token", response_model=Token)
-async def login_token(
+async def token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     redis_client: Redis = Depends(get_redis_client),
 ) -> Any:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    return await _login_token(form_data.username, form_data.password, redis_client)
+    if form_data.grant_type == "password":
+        data = await _access_token(form_data.username, form_data.password, redis_client)
+
+    if form_data.grant_type == "refresh_token":
+        data = await _refresh_token(form_data.refresh_token, redis_client)
+    return data
 
 
 @router.post("/signin", response_model=IPostResponseBase[Token])
@@ -86,7 +154,7 @@ async def login(
     """
     Login for all users
     """
-    data = await _login_token(email, password, redis_client)
+    data = await _access_token(email, password, redis_client)
     return create_response(meta=meta_data, data=data, message="Login correctly")
 
 
@@ -165,35 +233,8 @@ async def refresh_token(
     """
     Gets a new access token using the refresh token for future requests
     """
-    try:
-        payload = jwt.decode(body.refresh_token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
-    except (jwt.JWTError, ValidationError):
-        raise HTTPException(status_code=403, detail="Refresh token invalid")
-
-    if payload["type"] == "refresh":
-        user_id = payload["sub"]
-        valid_refresh_tokens = await get_valid_tokens(redis_client, user_id, TokenType.REFRESH)
-        if valid_refresh_tokens and body.refresh_token not in valid_refresh_tokens:
-            raise HTTPException(status_code=403, detail="Refresh token invalid")
-
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        user = await crud.user.get(id=user_id)
-        if user.is_active:
-            access_token = security.create_access_token(payload["sub"], expires_delta=access_token_expires)
-            valid_access_get_valid_tokens = await get_valid_tokens(redis_client, user.id, TokenType.ACCESS)
-            if valid_access_get_valid_tokens:
-                await add_token_to_redis(
-                    redis_client,
-                    user,
-                    access_token,
-                    TokenType.ACCESS,
-                    settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-                )
-            return create_response(
-                data=TokenRead(access_token=access_token, token_type="bearer"),
-                message="Access token generated correctly",
-            )
-        else:
-            raise HTTPException(status_code=404, detail="User inactive")
-    else:
-        raise HTTPException(status_code=404, detail="Incorrect token")
+    data = await _refresh_token(body.refresh_token)
+    return create_response(
+        data=data,
+        message="Access token generated correctly",
+    )
