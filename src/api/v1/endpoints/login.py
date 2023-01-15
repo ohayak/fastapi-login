@@ -27,21 +27,15 @@ class OAuth2PasswordRequestForm:
 
     def __init__(
         self,
-        grant_type: str = Form(default=None, regex="password|refresh_token"),
+        grant_type: str = Form(..., regex="password|refresh_token"),
         username: str = Form(default=""),
         password: str = Form(default=""),
         refresh_token: str = Form(default=""),
-        scope: str = Form(default=""),
-        client_id: str | None = Form(default=None),
-        client_secret: str | None = Form(default=None),
     ):
         self.grant_type = grant_type
         self.username = username
         self.password = password
         self.refresh_token = refresh_token
-        self.scopes = scope.split()
-        self.client_id = client_id
-        self.client_secret = client_secret
 
 
 async def _access_token(
@@ -139,8 +133,10 @@ async def token(
     if form_data.grant_type == "password":
         data = await _access_token(form_data.username, form_data.password, redis_client)
 
-    if form_data.grant_type == "refresh_token":
+    elif form_data.grant_type == "refresh_token":
         data = await _refresh_token(form_data.refresh_token, redis_client)
+    else:
+        raise HTTPException(status_code=400, detail=f"{form_data.grant_type} grant_type not supported")
     return data
 
 
@@ -225,7 +221,7 @@ async def change_password(
     return create_response(data=data, message="New password generated")
 
 
-@router.post("/refresh-token", response_model=IPostResponseBase[TokenRead], status_code=201)
+@router.post("/refresh-token", response_model=IPostResponseBase[Token], status_code=201)
 async def refresh_token(
     body: RefreshToken = Body(...),
     redis_client: Redis = Depends(get_redis_client),
@@ -233,7 +229,7 @@ async def refresh_token(
     """
     Gets a new access token using the refresh token for future requests
     """
-    data = await _refresh_token(body.refresh_token)
+    data = await _refresh_token(body.refresh_token, redis_client)
     return create_response(
         data=data,
         message="Access token generated correctly",
