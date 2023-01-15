@@ -106,9 +106,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi_filtered_paginated_ordered(
         self,
         *,
-        filter_by: str,
-        min: Union[int, float, None] = None,
-        max: Union[int, float, None] = None,
+        filter_by: Optional[str] = None,
+        min: Any = None,
+        max: Any = None,
         eq: Any = None,
         params: Optional[Params] = Params(),
         order_by: Optional[str] = None,
@@ -118,9 +118,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> Page[ModelType]:
         db_session = db_session or db.session
 
+        if filter_by is None:
+            return await self.get_multi_paginated_ordered(
+                params=params, order_by=order_by, order=order, query=query, db_session=db_session
+            )
+
         columns = self.model.__table__.columns
 
-        if filter_by not in columns or filter_by is None:
+        if filter_by not in columns:
             raise HTTPException(
                 status_code=409,
                 detail="filter_by must be a valid value",

@@ -99,14 +99,14 @@ async def get_infos(
 
 
 @router.get(
-    "/{schema}/evolution/filter",
+    "/{schema}/evolution",
     response_model=IGetResponsePaginated[IBatteryEvolutionRead],
 )
 async def get_evolution_filtered(
     schema: str,
-    filter_by: str,
-    min: Optional[float] = None,
-    max: Optional[float] = None,
+    filter_by: Optional[str] = None,
+    min: Any = None,
+    max: Any = None,
     eq: Any = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,
@@ -124,14 +124,14 @@ async def get_evolution_filtered(
 
 
 @router.get(
-    "/{schema}/review/filter",
+    "/{schema}/review",
     response_model=IGetResponsePaginated[IBatteryReviewRead],
 )
 async def get_review_filtered(
     schema: str,
-    filter_by: str,
-    min: Optional[float] = None,
-    max: Optional[float] = None,
+    filter_by: Optional[str],
+    min: Any = None,
+    max: Any = None,
     eq: Any = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,
@@ -149,14 +149,14 @@ async def get_review_filtered(
 
 
 @router.get(
-    "/{schema}/state/filter",
+    "/{schema}/state",
     response_model=IGetResponsePaginated[IBatteryStateRead],
 )
 async def get_state_filtered(
     schema: str,
-    filter_by: str,
-    min: Optional[float] = None,
-    max: Optional[float] = None,
+    filter_by: Optional[str],
+    min: Any = None,
+    max: Any = None,
     eq: Any = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,

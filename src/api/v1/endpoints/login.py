@@ -54,7 +54,7 @@ async def _access_token(
     refresh_token = security.create_refresh_token(user.id, expires_delta=refresh_token_expires)
     data = Token(
         access_token=access_token,
-        token_type="bearer",
+        token_type="Bearer",
         refresh_token=refresh_token,
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=user,
@@ -111,7 +111,7 @@ async def _refresh_token(
                 )
             return Token(
                 access_token=access_token,
-                token_type="bearer",
+                token_type="Bearer",
                 expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
                 refresh_token=refresh_token,
                 user=user,
@@ -136,7 +136,7 @@ async def token(
     elif form_data.grant_type == "refresh_token":
         data = await _refresh_token(form_data.refresh_token, redis_client)
     else:
-        raise HTTPException(status_code=400, detail=f"{form_data.grant_type} grant_type not supported")
+        raise HTTPException(status_code=400, detail="unsupported_grant_type")
     return data
 
 
@@ -196,7 +196,7 @@ async def change_password(
     refresh_token = security.create_refresh_token(current_user.id, expires_delta=refresh_token_expires)
     data = Token(
         access_token=access_token,
-        token_type="bearer",
+        token_type="Bearer",
         refresh_token=refresh_token,
         user=current_user,
     )
