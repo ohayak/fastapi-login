@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
@@ -160,6 +159,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         avg: List[str] = [],
         min: List[str] = [],
         max: List[str] = [],
+        sum: List[str] = [],
         count: List[str] = [],
         params: Optional[Params] = Params(),
         query: Optional[Union[T, Select[T]]] = None,
@@ -191,31 +191,37 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                         status_code=409,
                         detail=f"element {c} of avg not a valid value",
                     )
-                selection = selection + (func.avg(columns[c]).alias(c),)
+                selection = selection + (func.avg(columns[c]).label(c),)
             for c in min:
                 if c not in columns:
                     raise HTTPException(
                         status_code=409,
                         detail=f"element {c} of min not a valid value",
                     )
-                selection = selection + (func.min(columns[c]).alias(c),)
+                selection = selection + (func.min(columns[c]).label(c),)
             for c in max:
                 if c not in columns:
                     raise HTTPException(
                         status_code=409,
                         detail=f"element {c} of max not a valid value",
                     )
-                selection = selection + (func.max(columns[c]).alias(c),)
+                selection = selection + (func.max(columns[c]).label(c),)
             for c in count:
                 if c not in columns:
                     raise HTTPException(
                         status_code=409,
                         detail=f"element {c} of count not a valid value",
                     )
-                selection = selection + (func.count(columns[c]).alias(c),)
+                selection = selection + (func.count(columns[c]).label(c),)
+            for c in sum:
+                if c not in columns:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"element {c} of sum not a valid value",
+                    )
+                selection = selection + (func.sum(columns[c]).label(c),)
 
             query = select(selection).group_by(*clauses)
-            logging.debug(query)
 
         return await paginate(db_session, query, params)
 

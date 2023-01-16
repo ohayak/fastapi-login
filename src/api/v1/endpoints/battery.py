@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Path, Query, status
@@ -140,7 +140,7 @@ async def get_evolution_filtered(
 )
 async def get_review_filtered(
     schema: str,
-    filter_by: Optional[str],
+    filter_by: Optional[str] = None,
     min: Any = None,
     max: Any = None,
     eq: Any = None,
@@ -174,7 +174,7 @@ async def get_review_filtered(
 )
 async def get_state_filtered(
     schema: str,
-    filter_by: Optional[str],
+    filter_by: Optional[str] = None,
     min: Any = None,
     max: Any = None,
     eq: Any = None,
@@ -204,7 +204,7 @@ async def get_state_filtered(
 
 @router.post(
     "/{schema}/evolution/agg",
-    response_model=IPostResponsePaginated[IBatteryEvolutionAgg],
+    response_model=IPostResponsePaginated[Dict],
 )
 async def post_evolution_agg(
     schema: str,
@@ -221,8 +221,63 @@ async def post_evolution_agg(
         avg=payload.avg,
         min=payload.min,
         max=payload.max,
+        sum=payload.sum,
         count=payload.count,
         params=params,
         db_session=db,
     )
     return create_response(data=evolution)
+
+
+@router.post(
+    "/{schema}/review/agg",
+    response_model=IPostResponsePaginated[Dict],
+)
+async def post_review_agg(
+    schema: str,
+    payload: AggRequestForm,
+    current_user: User = Depends(deps.get_current_user()),
+    params: Params = Depends(),
+    db=Depends(deps.get_db_by_schema),
+):
+    """
+    Gets a filtred paginated list of reviews
+    """
+    review = await crud.batreview.get_multi_grouped_paginated(
+        group_by=payload.group_by,
+        avg=payload.avg,
+        min=payload.min,
+        max=payload.max,
+        sum=payload.sum,
+        count=payload.count,
+        params=params,
+        db_session=db,
+    )
+    return create_response(data=review)
+
+
+@router.post(
+    "/{schema}/state/agg",
+    response_model=IPostResponsePaginated[Dict],
+)
+async def post_state_agg(
+    schema: str,
+    payload: AggRequestForm,
+    current_user: User = Depends(deps.get_current_user()),
+    params: Params = Depends(),
+    db=Depends(deps.get_db_by_schema),
+):
+    """
+    Gets a filtred paginated list of state
+    """
+    state = await crud.batstate.get_multi_grouped_paginated(
+        group_by=payload.group_by,
+        avg=payload.avg,
+        min=payload.min,
+        max=payload.max,
+        sum=payload.sum,
+        count=payload.count,
+        params=params,
+        db_session=db,
+    )
+    return create_response(data=state)
