@@ -8,7 +8,7 @@ from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import exc
-from sqlmodel import SQLModel, and_, func, select
+from sqlmodel import SQLModel, and_, func, literal, select, type_coerce
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
@@ -132,19 +132,23 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 detail="filter_by must be a valid value",
             )
 
+        filtercol = columns[filter_by]
+
         if order_by not in columns or order_by is None:
             order_by = self.model.id
 
         if query is None:
             criteria = ()
-            if min:
-                criteria = and_(criteria, columns[filter_by] >= min)
-            if max:
-                criteria = and_(criteria, columns[filter_by] <= max)
-            if eq:
-                criteria = columns[filter_by] == eq
-            if like:
-                criteria = columns[filter_by].ilike(f"%{like}%")
+            if min and max:
+                criteria = and_(filtercol >= min, filtercol <= max)
+            elif max:
+                criteria = filtercol <= max
+            elif min:
+                criteria = filtercol >= min
+            elif eq:
+                criteria = filtercol == eq
+            elif like:
+                criteria = filtercol.ilike(f"%{like}%")
             if order == IOrderEnum.ascendent:
                 query = select(self.model).where(criteria).order_by(columns[order_by].asc())
             else:

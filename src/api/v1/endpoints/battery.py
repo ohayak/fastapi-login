@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional
+from datetime import datetime
+from typing import Dict, Optional, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Path, Query, status
@@ -10,7 +11,7 @@ from api import deps
 from core.config import settings
 from models.battery_model import BatteryCell, BatteryInfo, BatteryModel
 from models.user_model import User
-from schemas.agg_schema import AggRequestForm, IBatteryEvolutionAgg
+from schemas.agg_schema import AggRequestForm
 from schemas.battery_schema import (
     IBatteryCellRead,
     IBatteryEvolutionRead,
@@ -124,9 +125,9 @@ async def get_info_by_id(
 async def get_evolution_filtered(
     schema: str,
     filter_by: Optional[str] = None,
-    min: Any = None,
-    max: Any = None,
-    eq: Any = None,
+    min: Union[float, datetime, str, None] = None,
+    max: Union[float, datetime, str, None] = None,
+    eq: Union[bool, float, datetime, str, None] = None,
     like: str = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,
@@ -158,9 +159,9 @@ async def get_evolution_filtered(
 async def get_review_filtered(
     schema: str,
     filter_by: Optional[str] = None,
-    min: Any = None,
-    max: Any = None,
-    eq: Any = None,
+    min: Union[float, datetime, str, None] = None,
+    max: Union[float, datetime, str, None] = None,
+    eq: Union[bool, float, datetime, str, None] = None,
     like: str = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,
@@ -192,9 +193,9 @@ async def get_review_filtered(
 async def get_state_filtered(
     schema: str,
     filter_by: Optional[str] = None,
-    min: Any = None,
-    max: Any = None,
-    eq: Any = None,
+    min: Union[float, datetime, str, None] = None,
+    max: Union[float, datetime, str, None] = None,
+    eq: Union[bool, float, datetime, str, None] = None,
     like: str = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,

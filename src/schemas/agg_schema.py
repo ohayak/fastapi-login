@@ -3,7 +3,6 @@ from typing import List
 from pydantic import BaseModel
 
 from schemas.battery_schema import IBatteryEvolutionRead
-from utils.partial import optionalany
 
 
 class AggRequestForm(BaseModel):
@@ -13,8 +12,3 @@ class AggRequestForm(BaseModel):
     min: List[str] = []
     max: List[str] = []
     count: List[str] = []
-
-
-@optionalany
-class IBatteryEvolutionAgg(IBatteryEvolutionRead):
-    pass
