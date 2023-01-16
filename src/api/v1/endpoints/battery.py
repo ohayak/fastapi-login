@@ -1,7 +1,7 @@
 from typing import Any, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Body, Depends, Path, Query, status
 from fastapi_pagination import Params
 from sqlmodel import select
 
@@ -10,6 +10,7 @@ from api import deps
 from core.config import settings
 from models.battery_model import BatteryCell, BatteryInfo, BatteryModel
 from models.user_model import User
+from schemas.agg_schema import AggRequestForm, IBatteryEvolutionAgg
 from schemas.battery_schema import (
     IBatteryCellRead,
     IBatteryEvolutionRead,
@@ -23,6 +24,7 @@ from schemas.response_schema import (
     IGetResponseBase,
     IGetResponsePaginated,
     IPostResponseBase,
+    IPostResponsePaginated,
     IPutResponseBase,
     create_response,
 )
@@ -108,6 +110,7 @@ async def get_evolution_filtered(
     min: Any = None,
     max: Any = None,
     eq: Any = None,
+    like: str = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,
     current_user: User = Depends(deps.get_current_user()),
@@ -115,10 +118,18 @@ async def get_evolution_filtered(
     db=Depends(deps.get_db_by_schema),
 ):
     """
-    Gets a filtred paginated list of evolutions filtred by soh
+    Gets a filtred paginated list of evolutions
     """
     evolution = await crud.batevolution.get_multi_filtered_paginated_ordered(
-        filter_by=filter_by, min=min, max=max, eq=eq, params=params, order_by=order_by, order=order, db_session=db
+        filter_by=filter_by,
+        min=min,
+        max=max,
+        eq=eq,
+        like=like,
+        params=params,
+        order_by=order_by,
+        order=order,
+        db_session=db,
     )
     return create_response(data=evolution)
 
@@ -133,6 +144,7 @@ async def get_review_filtered(
     min: Any = None,
     max: Any = None,
     eq: Any = None,
+    like: str = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,
     current_user: User = Depends(deps.get_current_user()),
@@ -140,10 +152,18 @@ async def get_review_filtered(
     db=Depends(deps.get_db_by_schema),
 ):
     """
-    Gets a filtred paginated list of reviews filtred by soh
+    Gets a filtred paginated list of reviews
     """
     review = await crud.batreview.get_multi_filtered_paginated_ordered(
-        filter_by=filter_by, min=min, max=max, eq=eq, params=params, order_by=order_by, order=order, db_session=db
+        filter_by=filter_by,
+        min=min,
+        max=max,
+        eq=eq,
+        like=like,
+        params=params,
+        order_by=order_by,
+        order=order,
+        db_session=db,
     )
     return create_response(data=review)
 
@@ -158,6 +178,7 @@ async def get_state_filtered(
     min: Any = None,
     max: Any = None,
     eq: Any = None,
+    like: str = None,
     order_by: str = "id",
     order: IOrderEnum = IOrderEnum.ascendent,
     current_user: User = Depends(deps.get_current_user()),
@@ -165,9 +186,43 @@ async def get_state_filtered(
     db=Depends(deps.get_db_by_schema),
 ):
     """
-    Gets a filtred paginated list of states filtred by soh
+    Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_multi_filtered_paginated_ordered(
-        filter_by=filter_by, min=min, max=max, eq=eq, params=params, order_by=order_by, order=order, db_session=db
+        filter_by=filter_by,
+        min=min,
+        max=max,
+        eq=eq,
+        like=like,
+        params=params,
+        order_by=order_by,
+        order=order,
+        db_session=db,
     )
     return create_response(data=state)
+
+
+@router.post(
+    "/{schema}/evolution/agg",
+    response_model=IPostResponsePaginated[IBatteryEvolutionAgg],
+)
+async def post_evolution_agg(
+    schema: str,
+    payload: AggRequestForm,
+    current_user: User = Depends(deps.get_current_user()),
+    params: Params = Depends(),
+    db=Depends(deps.get_db_by_schema),
+):
+    """
+    Gets a filtred paginated list of evolutions
+    """
+    evolution = await crud.batevolution.get_multi_grouped_paginated(
+        group_by=payload.group_by,
+        avg=payload.avg,
+        min=payload.min,
+        max=payload.max,
+        count=payload.count,
+        params=params,
+        db_session=db,
+    )
+    return create_response(data=evolution)

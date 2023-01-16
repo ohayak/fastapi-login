@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
@@ -110,6 +111,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         min: Any = None,
         max: Any = None,
         eq: Any = None,
+        like: str = None,
         params: Optional[Params] = Params(),
         order_by: Optional[str] = None,
         order: Optional[IOrderEnum] = IOrderEnum.ascendent,
@@ -142,10 +144,78 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 criteria = and_(criteria, columns[filter_by] <= max)
             if eq:
                 criteria = columns[filter_by] == eq
+            if like:
+                criteria = columns[filter_by].ilike(f"%{like}%")
             if order == IOrderEnum.ascendent:
                 query = select(self.model).where(criteria).order_by(columns[order_by].asc())
             else:
                 query = select(self.model).where(criteria).order_by(columns[order_by].desc())
+
+        return await paginate(db_session, query, params)
+
+    async def get_multi_grouped_paginated(
+        self,
+        *,
+        group_by: List[str],
+        avg: List[str] = [],
+        min: List[str] = [],
+        max: List[str] = [],
+        count: List[str] = [],
+        params: Optional[Params] = Params(),
+        query: Optional[Union[T, Select[T]]] = None,
+        db_session: Optional[AsyncSession] = None,
+    ) -> Page[ModelType]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        if not group_by:
+            raise HTTPException(
+                status_code=409,
+                detail="group_by can't be empty",
+            )
+
+        for c in group_by:
+            if c not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"element {c} of group_by not a valid value",
+                )
+
+        if query is None:
+            clauses = tuple(columns[c] for c in group_by)
+            selection = clauses
+            for c in avg:
+                if c not in columns:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"element {c} of avg not a valid value",
+                    )
+                selection = selection + (func.avg(columns[c]).alias(c),)
+            for c in min:
+                if c not in columns:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"element {c} of min not a valid value",
+                    )
+                selection = selection + (func.min(columns[c]).alias(c),)
+            for c in max:
+                if c not in columns:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"element {c} of max not a valid value",
+                    )
+                selection = selection + (func.max(columns[c]).alias(c),)
+            for c in count:
+                if c not in columns:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"element {c} of count not a valid value",
+                    )
+                selection = selection + (func.count(columns[c]).alias(c),)
+
+            query = select(selection).group_by(*clauses)
+            logging.debug(query)
 
         return await paginate(db_session, query, params)
 

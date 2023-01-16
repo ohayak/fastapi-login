@@ -61,6 +61,10 @@ class IPostResponseBase(IResponseBase[DataType], Generic[DataType]):
     message: str = "Data created correctly"
 
 
+class IPostResponsePaginated(IResponsePage[DataType], Generic[DataType]):
+    message: str = "Data created correctly"
+
+
 class IPutResponseBase(IResponseBase[DataType], Generic[DataType]):
     message: str = "Data updated correctly"
 
