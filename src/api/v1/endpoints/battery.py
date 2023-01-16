@@ -101,6 +101,23 @@ async def get_infos(
 
 
 @router.get(
+    "/info/{info_id}",
+    response_model=IGetResponseBase[IBatteryInfoRead],
+)
+async def get_info_by_id(
+    info_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+):
+    """
+    Gets a info by its id
+    """
+    model = await crud.batinfo.get(id=info_id, db_session=db)
+    if model:
+        return create_response(data=model)
+    else:
+        raise IdNotFoundException(BatteryInfo, id=info_id)
+
+
+@router.get(
     "/{schema}/evolution",
     response_model=IGetResponsePaginated[IBatteryEvolutionRead],
 )
