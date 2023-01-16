@@ -46,20 +46,20 @@ async def get_cells(
 
 
 @router.get(
-    "/cell/{cell_id}",
+    "/cell/{cell_ref}",
     response_model=IGetResponseBase[IBatteryCellRead],
 )
-async def get_cell_by_id(
-    cell_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+async def get_cell_by_ref(
+    cell_ref: str, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a cell by its id
     """
-    cell = await crud.batcell.get(id=cell_id, db_session=db)
+    cell = await crud.batcell.get_by_ref(ref=cell_ref, db_session=db)
     if cell:
         return create_response(data=cell)
     else:
-        raise IdNotFoundException(BatteryCell, id=cell_id)
+        raise IdNotFoundException(BatteryCell, id=cell_ref)
 
 
 @router.get("/model", response_model=IGetResponsePaginated[IBatteryModelRead])
@@ -74,20 +74,20 @@ async def get_models(
 
 
 @router.get(
-    "/model/{cell_id}",
+    "/model/{model_ref}",
     response_model=IGetResponseBase[IBatteryModelRead],
 )
-async def get_model_by_id(
-    model_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+async def get_model_by_ref(
+    model_ref: str, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a model by its id
     """
-    model = await crud.batmodel.get(id=model_id, db_session=db)
+    model = await crud.batmodel.get_by_ref(ref=model_ref, db_session=db)
     if model:
         return create_response(data=model)
     else:
-        raise IdNotFoundException(BatteryModel, id=model_id)
+        raise IdNotFoundException(BatteryModel, id=model_ref)
 
 
 @router.get("/info", response_model=IGetResponsePaginated[IBatteryInfoRead])
@@ -111,9 +111,9 @@ async def get_info_by_id(
     """
     Gets a info by its id
     """
-    model = await crud.batinfo.get(id=info_id, db_session=db)
-    if model:
-        return create_response(data=model)
+    info = await crud.batinfo.get(id=info_id, db_session=db)
+    if info:
+        return create_response(data=info)
     else:
         raise IdNotFoundException(BatteryInfo, id=info_id)
 
