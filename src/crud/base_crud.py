@@ -92,14 +92,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         columns = self.model.__table__.columns
 
-        if order_by not in columns or order_by is None:
-            order_by = self.model.id
+        if order_by is None:
+            order_by = columns["id"]
+        elif order_by not in columns:
+            raise HTTPException(
+                status_code=409,
+                detail="order_by must be a valid column",
+            )
+        else:
+            order_by = columns[order_by]
 
         if query is None:
             if order == IOrderEnum.ascendent:
-                query = select(self.model).order_by(columns[order_by].asc())
+                query = select(self.model).order_by(order_by.asc())
             else:
-                query = select(self.model).order_by(columns[order_by].desc())
+                query = select(self.model).order_by(order_by.desc())
 
         return await paginate(db_session, query, params)
 
@@ -118,41 +125,46 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
         db_session = db_session or db.session
+        columns = self.model.__table__.columns
 
         if filter_by is None:
             return await self.get_multi_paginated_ordered(
                 params=params, order_by=order_by, order=order, query=query, db_session=db_session
             )
-
-        columns = self.model.__table__.columns
-
-        if filter_by not in columns:
+        elif filter_by not in columns:
             raise HTTPException(
                 status_code=409,
-                detail="filter_by must be a valid value",
+                detail="filter_by must be a valid column",
             )
+        else:
+            filter_by = columns[filter_by]
 
-        filtercol = columns[filter_by]
-
-        if order_by not in columns or order_by is None:
-            order_by = self.model.id
+        if order_by is None:
+            order_by = columns["id"]
+        elif order_by not in columns:
+            raise HTTPException(
+                status_code=409,
+                detail="order_by must be a valid column",
+            )
+        else:
+            order_by = columns[order_by]
 
         if query is None:
             criteria = ()
             if min and max:
-                criteria = and_(filtercol >= min, filtercol <= max)
+                criteria = and_(filter_by >= min, filter_by <= max)
             elif max:
-                criteria = filtercol <= max
+                criteria = filter_by <= max
             elif min:
-                criteria = filtercol >= min
+                criteria = filter_by >= min
             elif eq:
-                criteria = filtercol == eq
+                criteria = filter_by == eq
             elif like:
-                criteria = filtercol.ilike(f"%{like}%")
+                criteria = filter_by.ilike(f"%{like}%")
             if order == IOrderEnum.ascendent:
-                query = select(self.model).where(criteria).order_by(columns[order_by].asc())
+                query = select(self.model).where(criteria).order_by(order_by.asc())
             else:
-                query = select(self.model).where(criteria).order_by(columns[order_by].desc())
+                query = select(self.model).where(criteria).order_by(order_by.desc())
 
         return await paginate(db_session, query, params)
 
