@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 
-- battery endpoints
+## [1.2.0]
+
+- battery data query
+- battery data agg
 
 ## [1.1.0]
 
