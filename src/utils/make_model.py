@@ -1,20 +1,14 @@
 import uuid
 from collections import ChainMap
 from inspect import isclass
-from typing import Any, Container, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Container, Optional, Type, TypeVar, Union
 
-from pydantic import BaseConfig, BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model
 from sqlalchemy import inspect
 from sqlalchemy.orm import ColumnProperty
+from sqlmodel import SQLModel
 
-
-class _OrmConfig(BaseConfig):
-    """Base config for Pydantic models."""
-
-    orm_mode = True
-
-
-Model = TypeVar("Model")
+Model = TypeVar("Model", bound=SQLModel)
 
 
 def _from_pydantic(model: Model) -> dict[Any, tuple[Any, Any]]:
@@ -56,38 +50,18 @@ def _model_dict(model_name: str, dict_def: dict, *, inner: bool = False) -> Unio
     return create_model(model_name, **fields) if inner else fields
 
 
-def make_schema_from_orm(
+def _make_fields(
     db_model: Type,
-    *,
-    model_name="",
-    config: BaseConfig = _OrmConfig,
     include: tuple = (),
     exclude: Container[str] = (),
     exclude_all: Container[str] = (),
     required: Container[str] = (),
-    validators: Dict[str, classmethod] = None,
-) -> Model:
-    """Convert SQLAlchemy model to Pydantic dataclass scheme.
-
-    :param db_model: SQLAlchemy model class, not instance
-    :param model_name: New model name. Structure: '{db_model} your_name'
-    :param config: Pydantic Config class. By default – OrmConfig
-    :param include: tuple of included elements, may be contain Pydantic
-            model class or Dict[str: (type, field)]
-    :param exclude: Exclude elements of tuple, by keys. Can't use this with
-          exclude_all param
-    :param exclude_all: Exclude all beside tuple, can't use this with
-            'exclude' param
-    :param required: Keys in this tuple will be marks 'required' in scheme
-    :param validators: for example "key": (ValidatorClass, Field(...)).
-            Validator Class should be contain __get_validators__ method.
-    :return: Pydantic dataclass model
-    """
+):
     if exclude and exclude_all:
         raise ValueError("You can define only one of parameters(exclude, exclude_all)")
 
-    inspection = inspect(db_model)
     fields, defaults = {}, {int: 0, float: 0.0, str: "", bool: False, dict: {}}
+    inspection = inspect(db_model)
     for attr in inspection.attrs:
         if isinstance(attr, ColumnProperty):
             if attr.columns:
@@ -105,7 +79,7 @@ def make_schema_from_orm(
                 elif hasattr(column.type, "python_type"):
                     _type = column.type.python_type
 
-                default = Field(defaults.get(_type, ...)) if name in required else defaults.get(_type, None)
+                default = Field(defaults.get(_type, ...)) if name in required else None
                 if column.default is None and not column.nullable:
                     default = ...
                 fields[name] = (Optional[_type], default)
@@ -123,10 +97,46 @@ def make_schema_from_orm(
             _includes.append(item)
         include = ChainMap(*_includes)
         fields = {**fields, **include}
+
+    return fields
+
+
+def make_schema_from_orm(
+    *db_models: Type,
+    model_name="",
+    include: tuple = (),
+    exclude: Container[str] = (),
+    exclude_all: Container[str] = (),
+    required: Container[str] = (),
+) -> Model:
+    """Convert SQLAlchemy model to Pydantic dataclass scheme.
+
+    :param db_models: SQLAlchemy model class, not instance
+    :param model_name: New model name. Structure: '{db_model} your_name'
+    :param include: tuple of included elements, may be contain Pydantic
+            model class or Dict[str: (type, field)]
+    :param exclude: Exclude elements of tuple, by keys. Can't use this with
+          exclude_all param
+    :param exclude_all: Exclude all beside tuple, can't use this with
+            'exclude' param
+    :param required: Keys in this tuple will be marks 'required' in scheme
+    :return: Pydantic dataclass model
+    """
+    fields = {}
+    final_model_name = model_name
+    for db_model in db_models:
+        fields = fields | _make_fields(
+            db_model,
+            include,
+            exclude,
+            exclude_all,
+            required,
+        )
+        final_model_name = f"{db_model.__name__} {final_model_name}"
     new_model = create_model(
-        f"{db_model.__name__} {model_name}",
-        __config__=config,
-        __validators__=validators,
+        final_model_name,
+        __base__=SQLModel,
+        __validators__=SQLModel.__validators__,
         **fields,
     )
     return new_model

@@ -11,7 +11,7 @@ from models.battery_model import (
     BatteryState,
     CompanyData,
 )
-from utils.make_model import Model, make_schema_from_orm, merge_schemas
+from utils.make_model import Model, make_schema_from_orm
 
 IBatteryCellRead: Model = make_schema_from_orm(BatteryCell, model_name="IBatteryCellRead")
 
@@ -31,17 +31,6 @@ IBatteryReviewRead: Model = make_schema_from_orm(BatteryReview, model_name="IBat
 IBatteryStateRead: Model = make_schema_from_orm(BatteryState, model_name="IBatteryStateRead")
 
 
-IBatteryCompanyRead: Model = make_schema_from_orm(BatteryCompany, model_name="IBatteryCompanyRead")
-
-
-ICompanyDataRead: Model = make_schema_from_orm(CompanyData, model_name="ICompanyDataRead")
-
-
-IBatteryCompanyDataRead: Model = merge_schemas(
-    (
-        IBatteryCompanyRead,
-        ICompanyDataRead,
-    ),
-    schema_name="IBatteryCompanyDataRead",
-    exclude=("company_id",),
+IBatteryCompanyDataRead: Model = make_schema_from_orm(
+    BatteryCompany, CompanyData, model_name="IBatteryCompanyDataRead", exclude=("company_id",)
 )

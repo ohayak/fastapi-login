@@ -69,11 +69,14 @@ class CRUDBatteryCompany(CRUDBase[BatteryCompany, Dict[str, Any], Dict[str, Any]
         query = (
             select(BatteryCompany, CompanyData)
             .where(BatteryCompany.name == name)
-            .join(CompanyData, BatteryCompany.id == CompanyData.company_id)
+            .join(CompanyData, BatteryCompany.id == CompanyData.company_id, isouter=True)
         )
         company = await db_session.execute(query)
         company, data = company.one_or_none()
-        return company.__dict__ | data.__dict__
+        if data:
+            return company.__dict__ | data.__dict__
+        else:
+            return company.__dict__
 
 
 batcompany = CRUDBatteryCompany(BatteryCompany)
