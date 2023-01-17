@@ -140,7 +140,7 @@ async def token(
     return data
 
 
-@router.post("/signin", response_model=IPostResponseBase[Token])
+@router.post("/signin", response_model=Token)
 async def login(
     email: EmailStr = Body(...),
     password: str = Body(...),
@@ -151,10 +151,10 @@ async def login(
     Login for all users
     """
     data = await _access_token(email, password, redis_client)
-    return create_response(meta=meta_data, data=data, message="Login correctly")
+    return data
 
 
-@router.post("/signout", response_model=IPostResponseBase[Token])
+@router.post("/signout")
 async def logout(
     redirect_url: str = Query("/"),
     current_user: User = Depends(deps.get_current_user()),
@@ -167,7 +167,7 @@ async def logout(
     return response
 
 
-@router.post("/change-password", response_model=IPostResponseBase[Token])
+@router.post("/change-password", response_model=Token)
 async def change_password(
     current_password: str = Body(...),
     new_password: str = Body(...),
@@ -218,10 +218,10 @@ async def change_password(
         settings.REFRESH_TOKEN_EXPIRE_MINUTES,
     )
 
-    return create_response(data=data, message="New password generated")
+    return data
 
 
-@router.post("/refresh-token", response_model=IPostResponseBase[Token], status_code=201)
+@router.post("/refresh-token", response_model=Token, status_code=201)
 async def refresh_token(
     body: RefreshToken = Body(...),
     redis_client: Redis = Depends(get_redis_client),
@@ -230,7 +230,4 @@ async def refresh_token(
     Gets a new access token using the refresh token for future requests
     """
     data = await _refresh_token(body.refresh_token, redis_client)
-    return create_response(
-        data=data,
-        message="Access token generated correctly",
-    )
+    return data
