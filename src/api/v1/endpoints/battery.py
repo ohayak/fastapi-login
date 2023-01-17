@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Dict, Optional, Union
-from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Path, Query, status
 from fastapi_pagination import Params
@@ -137,7 +136,7 @@ async def get_infos_filtred(
     response_model=IGetResponseBase[IBatteryInfoRead],
 )
 async def get_info_by_ref(
-    battery_ref: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+    battery_ref: str, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a info by its id
