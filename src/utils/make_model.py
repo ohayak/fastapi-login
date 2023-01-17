@@ -60,7 +60,7 @@ def _make_fields(
     if exclude and exclude_all:
         raise ValueError("You can define only one of parameters(exclude, exclude_all)")
 
-    fields, defaults = {}, {int: 0, float: 0.0, str: "", bool: False, dict: {}}
+    fields, defaults = {}, {int: None, float: None, str: None, bool: None, dict: None}
     inspection = inspect(db_model)
     for attr in inspection.attrs:
         if isinstance(attr, ColumnProperty):
@@ -79,7 +79,7 @@ def _make_fields(
                 elif hasattr(column.type, "python_type"):
                     _type = column.type.python_type
 
-                default = Field(defaults.get(_type, ...)) if name in required else None
+                default = Field(defaults.get(_type, ...)) if name in required else defaults.get(_type, None)
                 if column.default is None and not column.nullable:
                     default = ...
                 fields[name] = (Optional[_type], default)
