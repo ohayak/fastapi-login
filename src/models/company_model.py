@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional
 from uuid import UUID
 
@@ -7,11 +8,18 @@ from models.base_uuid_model import BaseUUIDModel
 from models.user_model import User
 
 
+class CompanyStatusEnum(str, Enum):
+    OPERATOR = "OPERATOR"
+    REPAIRER = "REPAIRER"
+    RECYCLER = "RECYCLER"
+    SECONDLIFE = "SECONDLIFE"
+
+
 class CompanyBase(SQLModel):
     name: str
     description: Optional[str]
     address: Optional[str]
-    status: Optional[str]
+    status: Optional[CompanyStatusEnum]
     repair_partner: Optional[str]
 
 

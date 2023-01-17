@@ -14,6 +14,7 @@ from models.user_model import User
 from schemas.agg_schema import AggRequestForm
 from schemas.battery_schema import (
     IBatteryCellRead,
+    IBatteryCompanyDataRead,
     IBatteryEvolutionRead,
     IBatteryInfoRead,
     IBatteryModelRead,
@@ -32,6 +33,17 @@ from schemas.response_schema import (
 from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 
 router = APIRouter()
+
+
+@router.get("/company/{name}", response_model=IGetResponseBase[IBatteryCompanyDataRead])
+async def get_company(
+    name: str, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+):
+    """
+    Gets a paginated list of cells
+    """
+    company = await crud.batcompany.get_by_name(name=name, db_session=db)
+    return create_response(data=company)
 
 
 @router.get("/cell", response_model=IGetResponsePaginated[IBatteryCellRead])
@@ -91,31 +103,50 @@ async def get_model_by_ref(
 
 
 @router.get("/info", response_model=IGetResponsePaginated[IBatteryInfoRead])
-async def get_infos(
-    params: Params = Depends(), current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+async def get_infos_filtred(
+    filter_by: Optional[str] = None,
+    min: Union[float, datetime, str, None] = None,
+    max: Union[float, datetime, str, None] = None,
+    eq: Union[bool, float, datetime, str, None] = None,
+    like: str = None,
+    order_by: str = "id",
+    order: IOrderEnum = IOrderEnum.ascendent,
+    params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
+    db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a paginated list of infos
     """
-    infos = await crud.batinfo.get_multi_paginated(params=params, db_session=db)
+    infos = await crud.batinfo.get_multi_filtered_paginated_ordered(
+        filter_by=filter_by,
+        min=min,
+        max=max,
+        eq=eq,
+        like=like,
+        params=params,
+        order_by=order_by,
+        order=order,
+        db_session=db,
+    )
     return create_response(data=infos)
 
 
 @router.get(
-    "/info/{info_id}",
+    "/info/{battery_ref}",
     response_model=IGetResponseBase[IBatteryInfoRead],
 )
-async def get_info_by_id(
-    info_id: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
+async def get_info_by_ref(
+    battery_ref: UUID, current_user: User = Depends(deps.get_current_user()), db=Depends(deps.get_db_by_schema)
 ):
     """
     Gets a info by its id
     """
-    info = await crud.batinfo.get(id=info_id, db_session=db)
+    info = await crud.batinfo.get_by_ref(ref=battery_ref, db_session=db)
     if info:
         return create_response(data=info)
     else:
-        raise IdNotFoundException(BatteryInfo, id=info_id)
+        raise IdNotFoundException(BatteryInfo, id=battery_ref)
 
 
 @router.get(

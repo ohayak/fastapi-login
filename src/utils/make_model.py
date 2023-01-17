@@ -130,3 +130,18 @@ def make_schema_from_orm(
         **fields,
     )
     return new_model
+
+
+def merge_schemas(
+    schemas: Container[Model],
+    schema_name: str = "",
+    exclude: Container[str] = (),
+) -> Model:
+    fields = {}
+
+    for model in schemas:
+        for key, value in model.__fields__.items():
+            if key not in exclude:
+                fields[key] = (Optional[value.type_], value.default)
+
+    return create_model(schema_name, **fields)

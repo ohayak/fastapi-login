@@ -4,7 +4,7 @@ from sqlalchemy import VARCHAR, Column
 from sqlalchemy import Enum as saEnum
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base, declared_attr
+from sqlalchemy.orm import declarative_base, declared_attr, relationship
 
 from core.config import settings
 
