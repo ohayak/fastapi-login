@@ -31,6 +31,14 @@ IBatteryReviewRead: Model = make_schema_from_orm(BatteryReview, model_name="IBat
 IBatteryStateRead: Model = make_schema_from_orm(BatteryState, model_name="IBatteryStateRead")
 
 
+IBatteryStateInfoRead: Model = make_schema_from_orm(
+    BatteryState,
+    BatteryInfo,
+    model_name="IBatteryStateInfoRead",
+    exclude=("id", "created_at", "updated_at", "company_id"),
+)
+
+
 IBatteryCompanyDataRead: Model = make_schema_from_orm(
     BatteryCompany, CompanyData, model_name="IBatteryCompanyDataRead", exclude=("company_id",)
 )

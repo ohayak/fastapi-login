@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
@@ -85,7 +86,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         params: Optional[Params] = Params(),
         order_by: Optional[str] = None,
         order: Optional[IOrderEnum] = IOrderEnum.ascendent,
-        query: Optional[Union[T, Select[T]]] = None,
+        selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
         db_session = db_session or db.session
@@ -102,12 +103,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         else:
             order_by = columns[order_by]
 
-        if query is None:
-            if order == IOrderEnum.ascendent:
-                query = select(self.model).order_by(order_by.asc())
-            else:
-                query = select(self.model).order_by(order_by.desc())
+        if selectexp is None:
+            selectexp = select(self.model)
 
+        if order == IOrderEnum.ascendent:
+            query = selectexp.order_by(order_by.asc())
+        else:
+            query = selectexp.order_by(order_by.desc())
+
+        logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)
 
     async def get_multi_filtered_paginated_ordered(
@@ -121,7 +125,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         params: Optional[Params] = Params(),
         order_by: Optional[str] = None,
         order: Optional[IOrderEnum] = IOrderEnum.ascendent,
-        query: Optional[Union[T, Select[T]]] = None,
+        selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
         db_session = db_session or db.session
@@ -129,12 +133,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         if filter_by is None:
             return await self.get_multi_paginated_ordered(
-                params=params, order_by=order_by, order=order, query=query, db_session=db_session
+                params=params, order_by=order_by, order=order, selectexp=selectexp, db_session=db_session
             )
         elif filter_by not in columns:
             raise HTTPException(
                 status_code=409,
-                detail="filter_by must be a valid column",
+                detail=f"filter_by must be a valid column from {columns.keys()}",
             )
         else:
             filter_by = columns[filter_by]
@@ -144,28 +148,32 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         elif order_by not in columns:
             raise HTTPException(
                 status_code=409,
-                detail="order_by must be a valid column",
+                detail=f"order_by must be a valid column from {columns.keys()}",
             )
         else:
             order_by = columns[order_by]
 
-        if query is None:
-            criteria = ()
-            if min and max:
-                criteria = and_(filter_by >= min, filter_by <= max)
-            elif max:
-                criteria = filter_by <= max
-            elif min:
-                criteria = filter_by >= min
-            elif eq:
-                criteria = filter_by == eq
-            elif like:
-                criteria = filter_by.ilike(f"%{like}%")
-            if order == IOrderEnum.ascendent:
-                query = select(self.model).where(criteria).order_by(order_by.asc())
-            else:
-                query = select(self.model).where(criteria).order_by(order_by.desc())
+        criteria = ()
+        if min and max:
+            criteria = and_(filter_by >= min, filter_by <= max)
+        elif max:
+            criteria = filter_by <= max
+        elif min:
+            criteria = filter_by >= min
+        elif eq:
+            criteria = filter_by == eq
+        elif like:
+            criteria = filter_by.ilike(f"%{like}%")
 
+        if selectexp is None:
+            selectexp = select(self.model)
+
+        if order == IOrderEnum.ascendent:
+            query = selectexp.where(criteria).order_by(order_by.asc())
+        else:
+            query = selectexp.where(criteria).order_by(order_by.desc())
+
+        logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)
 
     async def get_multi_grouped_paginated(
@@ -178,7 +186,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         sum: List[str] = [],
         count: List[str] = [],
         params: Optional[Params] = Params(),
-        query: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
         db_session = db_session or db.session
@@ -195,50 +202,50 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if c not in columns:
                 raise HTTPException(
                     status_code=409,
-                    detail=f"element {c} of group_by not a valid value",
+                    detail=f"element {c} of group_by not a valid value from {columns.keys()}",
                 )
 
-        if query is None:
-            clauses = tuple(columns[c] for c in group_by)
-            selection = clauses
-            for c in avg:
-                if c not in columns:
-                    raise HTTPException(
-                        status_code=409,
-                        detail=f"element {c} of avg not a valid value",
-                    )
-                selection = selection + (func.avg(columns[c]).label(c),)
-            for c in min:
-                if c not in columns:
-                    raise HTTPException(
-                        status_code=409,
-                        detail=f"element {c} of min not a valid value",
-                    )
-                selection = selection + (func.min(columns[c]).label(c),)
-            for c in max:
-                if c not in columns:
-                    raise HTTPException(
-                        status_code=409,
-                        detail=f"element {c} of max not a valid value",
-                    )
-                selection = selection + (func.max(columns[c]).label(c),)
-            for c in count:
-                if c not in columns:
-                    raise HTTPException(
-                        status_code=409,
-                        detail=f"element {c} of count not a valid value",
-                    )
-                selection = selection + (func.count(columns[c]).label(c),)
-            for c in sum:
-                if c not in columns:
-                    raise HTTPException(
-                        status_code=409,
-                        detail=f"element {c} of sum not a valid value",
-                    )
-                selection = selection + (func.sum(columns[c]).label(c),)
+        clauses = tuple(columns[c] for c in group_by)
+        selection = clauses
+        for c in avg:
+            if c not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"element {c} of avg not a valid value from {columns.keys()}",
+                )
+            selection = selection + (func.avg(columns[c]).label(c),)
+        for c in min:
+            if c not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"element {c} of min not a valid value from {columns.keys()}",
+                )
+            selection = selection + (func.min(columns[c]).label(c),)
+        for c in max:
+            if c not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"element {c} of max not a valid value from {columns.keys()}",
+                )
+            selection = selection + (func.max(columns[c]).label(c),)
+        for c in count:
+            if c not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"element {c} of count not a valid value from {columns.keys()}",
+                )
+            selection = selection + (func.count(columns[c]).label(c),)
+        for c in sum:
+            if c not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"element {c} of sum not a valid value from {columns.keys()}",
+                )
+            selection = selection + (func.sum(columns[c]).label(c),)
 
-            query = select(selection).group_by(*clauses)
+        query = select(selection).group_by(*clauses)
 
+        logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)
 
     async def get_multi_ordered(
@@ -262,6 +269,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         else:
             query = select(self.model).offset(skip).limit(limit).order_by(columns[order_by.value].desc())
 
+        logging.debug(f"Exec query: {query}")
         response = await db_session.execute(query)
         return response.scalars().all()
 

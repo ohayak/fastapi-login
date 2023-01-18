@@ -18,6 +18,7 @@ from schemas.battery_schema import (
     IBatteryInfoRead,
     IBatteryModelRead,
     IBatteryReviewRead,
+    IBatteryStateInfoRead,
     IBatteryStateRead,
 )
 from schemas.common_schema import IOrderEnum
@@ -237,6 +238,40 @@ async def get_state_filtered(
     Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_multi_filtered_paginated_ordered(
+        filter_by=filter_by,
+        min=min,
+        max=max,
+        eq=eq,
+        like=like,
+        params=params,
+        order_by=order_by,
+        order=order,
+        db_session=db,
+    )
+    return create_response(data=state)
+
+
+@router.get(
+    "/{schema}/state/info",
+    response_model=IGetResponsePaginated[IBatteryStateInfoRead],
+)
+async def get_state_info_filtered(
+    schema: str,
+    filter_by: Optional[str] = None,
+    min: Union[float, datetime, str, None] = None,
+    max: Union[float, datetime, str, None] = None,
+    eq: Union[bool, float, datetime, str, None] = None,
+    like: str = None,
+    order_by: str = "id",
+    order: IOrderEnum = IOrderEnum.ascendent,
+    current_user: User = Depends(deps.get_current_user()),
+    params: Params = Depends(),
+    db=Depends(deps.get_db_by_schema),
+):
+    """
+    Gets a filtred paginated list of states
+    """
+    state = await crud.batstate.get_state_info(
         filter_by=filter_by,
         min=min,
         max=max,

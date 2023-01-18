@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 
-## [1.2.2]
+## [1.2.3]
 
 - battery company data endpoint
+- endpoint join between battery state and info
 
 ## [1.2.1]
 
