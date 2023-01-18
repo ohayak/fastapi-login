@@ -52,6 +52,5 @@ services:
       - redis
       - dbdata
       - dbauth
-      - dbsched
     ports:
       - 8000:8000
