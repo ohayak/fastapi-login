@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Dict
 
 from fastapi import APIRouter, Body, Depends, Path, Query, status
 from fastapi_pagination import Params
@@ -7,10 +6,8 @@ from sqlmodel import select
 
 import crud
 from api import deps
-from core.config import settings
 from models.battery_model import BatteryCell, BatteryInfo, BatteryModel
 from models.user_model import User
-from schemas.agg_schema import AggRequestForm
 from schemas.battery_schema import (
     IBatteryCellRead,
     IBatteryCompanyDataRead,
@@ -21,7 +18,7 @@ from schemas.battery_schema import (
     IBatteryStateInfoRead,
     IBatteryStateRead,
 )
-from schemas.common_schema import IOrderEnum
+from schemas.common_schema import AggRequestForm, Conds, IOrderEnum
 from schemas.response_schema import (
     IGetResponseBase,
     IGetResponsePaginated,
@@ -104,13 +101,7 @@ async def get_model_by_ref(
 
 @router.get("/info", response_model=IGetResponsePaginated[IBatteryInfoRead])
 async def get_infos_filtred(
-    filter_by: Optional[str] = None,
-    min: Union[float, datetime, str, None] = None,
-    max: Union[float, datetime, str, None] = None,
-    eq: Union[bool, float, datetime, str, None] = None,
-    like: str = None,
-    order_by: str = "id",
-    order: IOrderEnum = IOrderEnum.ascendent,
+    conds: Conds = Depends(),
     params: Params = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
@@ -119,14 +110,14 @@ async def get_infos_filtred(
     Gets a paginated list of infos
     """
     infos = await crud.batinfo.get_multi_filtered_paginated_ordered(
-        filter_by=filter_by,
-        min=min,
-        max=max,
-        eq=eq,
-        like=like,
+        filter_by=conds.filter_by,
+        min=conds.min,
+        max=conds.max,
+        eq=conds.eq,
+        like=conds.like,
         params=params,
-        order_by=order_by,
-        order=order,
+        order_by=conds.order_by,
+        order=conds.order,
         db_session=db,
     )
     return create_response(data=infos)
@@ -155,13 +146,7 @@ async def get_info_by_ref(
 )
 async def get_evolution_filtered(
     schema: str,
-    filter_by: Optional[str] = None,
-    min: Union[float, datetime, str, None] = None,
-    max: Union[float, datetime, str, None] = None,
-    eq: Union[bool, float, datetime, str, None] = None,
-    like: str = None,
-    order_by: str = "id",
-    order: IOrderEnum = IOrderEnum.ascendent,
+    conds: Conds = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -170,14 +155,14 @@ async def get_evolution_filtered(
     Gets a filtred paginated list of evolutions
     """
     evolution = await crud.batevolution.get_multi_filtered_paginated_ordered(
-        filter_by=filter_by,
-        min=min,
-        max=max,
-        eq=eq,
-        like=like,
+        filter_by=conds.filter_by,
+        min=conds.min,
+        max=conds.max,
+        eq=conds.eq,
+        like=conds.like,
         params=params,
-        order_by=order_by,
-        order=order,
+        order_by=conds.order_by,
+        order=conds.order,
         db_session=db,
     )
     return create_response(data=evolution)
@@ -189,13 +174,7 @@ async def get_evolution_filtered(
 )
 async def get_review_filtered(
     schema: str,
-    filter_by: Optional[str] = None,
-    min: Union[float, datetime, str, None] = None,
-    max: Union[float, datetime, str, None] = None,
-    eq: Union[bool, float, datetime, str, None] = None,
-    like: str = None,
-    order_by: str = "id",
-    order: IOrderEnum = IOrderEnum.ascendent,
+    conds: Conds = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -204,14 +183,14 @@ async def get_review_filtered(
     Gets a filtred paginated list of reviews
     """
     review = await crud.batreview.get_multi_filtered_paginated_ordered(
-        filter_by=filter_by,
-        min=min,
-        max=max,
-        eq=eq,
-        like=like,
+        filter_by=conds.filter_by,
+        min=conds.min,
+        max=conds.max,
+        eq=conds.eq,
+        like=conds.like,
         params=params,
-        order_by=order_by,
-        order=order,
+        order_by=conds.order_by,
+        order=conds.order,
         db_session=db,
     )
     return create_response(data=review)
@@ -223,13 +202,7 @@ async def get_review_filtered(
 )
 async def get_state_filtered(
     schema: str,
-    filter_by: Optional[str] = None,
-    min: Union[float, datetime, str, None] = None,
-    max: Union[float, datetime, str, None] = None,
-    eq: Union[bool, float, datetime, str, None] = None,
-    like: str = None,
-    order_by: str = "id",
-    order: IOrderEnum = IOrderEnum.ascendent,
+    conds: Conds = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -238,14 +211,14 @@ async def get_state_filtered(
     Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_multi_filtered_paginated_ordered(
-        filter_by=filter_by,
-        min=min,
-        max=max,
-        eq=eq,
-        like=like,
+        filter_by=conds.filter_by,
+        min=conds.min,
+        max=conds.max,
+        eq=conds.eq,
+        like=conds.like,
         params=params,
-        order_by=order_by,
-        order=order,
+        order_by=conds.order_by,
+        order=conds.order,
         db_session=db,
     )
     return create_response(data=state)
@@ -257,13 +230,7 @@ async def get_state_filtered(
 )
 async def get_state_info_filtered(
     schema: str,
-    filter_by: Optional[str] = None,
-    min: Union[float, datetime, str, None] = None,
-    max: Union[float, datetime, str, None] = None,
-    eq: Union[bool, float, datetime, str, None] = None,
-    like: str = None,
-    order_by: str = "id",
-    order: IOrderEnum = IOrderEnum.ascendent,
+    conds: Conds = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -272,14 +239,14 @@ async def get_state_info_filtered(
     Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_state_info(
-        filter_by=filter_by,
-        min=min,
-        max=max,
-        eq=eq,
-        like=like,
+        filter_by=conds.filter_by,
+        min=conds.min,
+        max=conds.max,
+        eq=conds.eq,
+        like=conds.like,
         params=params,
-        order_by=order_by,
-        order=order,
+        order_by=conds.order_by,
+        order=conds.order,
         db_session=db,
     )
     return create_response(data=state)
@@ -287,6 +254,7 @@ async def get_state_info_filtered(
 
 @router.post(
     "/{schema}/evolution/agg",
+    response_description="Aggregation operation results depends on query",
     response_model=IPostResponsePaginated[Dict],
 )
 async def post_evolution_agg(
@@ -314,6 +282,7 @@ async def post_evolution_agg(
 
 @router.post(
     "/{schema}/review/agg",
+    response_description="Aggregation operation results depends on query",
     response_model=IPostResponsePaginated[Dict],
 )
 async def post_review_agg(
@@ -341,6 +310,7 @@ async def post_review_agg(
 
 @router.post(
     "/{schema}/state/agg",
+    response_description="Aggregation operation results depends on query",
     response_model=IPostResponsePaginated[Dict],
 )
 async def post_state_agg(

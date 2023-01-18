@@ -1,10 +1,10 @@
-# TRUSTSPACE API
+# BIB API
 
 ## Quick start
 
 To run project locally you can just type `docker-compose up`. First time may fail, restart.
 
-## How to run the application
+## Install depenedencies
 
 Conda is used for dedendency management.
 
@@ -22,18 +22,9 @@ conda env update -f conda-env.yaml
 conda env update -f conda-env-dev.yaml
 ```
 
-## Applying migrations and startup
+## Settings
 
-Before running the application don't forget to apply pending migrations.
-You can apply migrations manualy:
-
-```bash
-[dotenv run] alembic upgrade heads
-```
-
-Or automaticly, by setting environment variable `DB_MIGRATE=true`  or just apppend `--migrate` option to `./start.sh` command
-
-All parameters required are defined in `src/settings.py`, you can pass this parameters to the program inside a `.env` file and start the server with `./start.sh --dotenv`.
+All parameters required are defined in `src/core/config.py`, you can pass this parameters to the program inside a `.env` file and start the server with `./start.sh --dotenv`.
 You can also use `dotenv run <command>` to load parameters from `.env` file with any command.
 
 How `.env` looks like:
@@ -46,13 +37,6 @@ DB_AUTH_PORT=5432
 DB_AUTH_NAME=auth
 DB_AUTH_USER=auth
 DB_AUTH_PASSWORD="my-password"
-
-# Configuration of scheduler database
-DB_SCHEDULER_HOST=<ip, localhost etc>
-DB_SCHEDULER_PORT=5432
-DB_SCHEDULER_NAME=scheduler
-DB_SCHEDULER_USER=scheduler
-DB_SCHEDULER_PASSWORD="other password"
 
 # Configuration of batetry data database
 DB_DATA_HOST=<ip, localhost etc>
@@ -72,9 +56,38 @@ ACCESSLOG=true
 
 # enable or not error logs
 ERRORLOG=true
+
+# run database migration before startup
+DB_MIGRATE=true
+
+# init database before startup
+DB_INIT=true
 ```
 
 /!\ `.env` file contains sensible informations like database IP and passwords, never push this file to git repository.
+
+## Startup
+
+Before running the application don't forget to apply pending migrations.
+You can apply migrations manualy:
+
+```bash
+alembic upgrade heads
+```
+
+Or automaticly, by setting environment variables `DB_MIGRATE=true` and `DB_INIT=true`, or just apppend `--migrate` and `--init` options to `./start.sh` command
+
+```bash
+# use --dotenv to load .env file
+# Examples
+./start.sh --dotenv
+./start.sh --init --migrate
+./start
+```
+
+## Pushing data at startup
+
+If you need to create new users/roles/groups use `src/initdb.py` script to push new entitites to database and run `./start.sh --init` to make the changes at startup.
 
 ## How to build images
 
@@ -84,3 +97,21 @@ The easiest way if to push a tag to git and Bitbucket Pipelines will create a ne
 
 Please refer to `bitbucket-pipelines.yaml` and Bitbucket pipelines documentation
 /!\ Environment variables used in the pipeline, are defined via the web interface manually. Check [Repository varaibles](https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/)
+
+## Database migration tools
+
+Please check [Alembic](https://alembic.sqlalchemy.org/en/latest/) for details. Below a list of must used commands
+
+```bash
+# upgrade database to the latest version
+alembic upgrade heads
+
+# downgrade database
+alembic downgrade heads-1
+
+# generate empty migration
+alembic revision -m "some comment"
+
+# generate migration
+alembic revision --autogenerate -m "some comment"
+```

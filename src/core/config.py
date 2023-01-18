@@ -20,13 +20,6 @@ class Settings(BaseSettings):
     DB_AUTH_NAME: str = "auth"
     ASYNC_DB_AUTH_URI: Optional[str]
 
-    DB_SCHEDULER_USER: str = "scheduler"
-    DB_SCHEDULER_PASSWORD: str = "scheduler"
-    DB_SCHEDULER_HOST: str = "localhost"
-    DB_SCHEDULER_PORT: Union[int, str] = 5432
-    DB_SCHEDULER_NAME: str = "scheduler"
-    ASYNC_DB_SCHEDULER_URI: Optional[str]
-
     DB_DATA_USER: str = "data"
     DB_DATA_PASSWORD: str = "data"
     DB_DATA_HOST: str = "localhost"
@@ -46,19 +39,6 @@ class Settings(BaseSettings):
             host=values.get("DB_AUTH_HOST"),
             port=str(values.get("DB_AUTH_PORT")),
             path=f"/{values.get('DB_AUTH_NAME') or ''}",
-        )
-
-    @validator("ASYNC_DB_SCHEDULER_URI", pre=True)
-    def assemble_async_db_scheduler_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
-        if isinstance(v, str):
-            return v
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            user=values.get("DB_SCHEDULER_USER"),
-            password=values.get("DB_SCHEDULER_PASSWORD"),
-            host=values.get("DB_SCHEDULER_HOST"),
-            port=str(values.get("DB_SCHEDULER_PORT")),
-            path=f"/{values.get('DB_SCHEDULER_NAME') or ''}",
         )
 
     @validator("ASYNC_DB_DATA_URI", pre=True)

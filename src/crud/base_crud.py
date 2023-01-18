@@ -93,12 +93,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         columns = self.model.__table__.columns
 
-        if order_by is None:
-            order_by = columns["id"]
-        elif order_by not in columns:
+        if order_by is not None and order_by not in columns:
             raise HTTPException(
                 status_code=409,
-                detail="order_by must be a valid column",
+                detail=f"order_by must be a valid column from {columns.keys()}",
             )
         else:
             order_by = columns[order_by]
@@ -106,10 +104,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if selectexp is None:
             selectexp = select(self.model)
 
-        if order == IOrderEnum.ascendent:
-            query = selectexp.order_by(order_by.asc())
-        else:
-            query = selectexp.order_by(order_by.desc())
+        query = selectexp
+
+        if order_by is not None:
+            if order == IOrderEnum.ascendent:
+                query = query.order_by(order_by.asc())
+            else:
+                query = query.order_by(order_by.desc())
 
         logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)
@@ -143,9 +144,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         else:
             filter_by = columns[filter_by]
 
-        if order_by is None:
-            order_by = columns["id"]
-        elif order_by not in columns:
+        conditions = sum([(min is not None) or (max is not None), (eq is not None), (like is not None)])
+
+        if filter_by is not None and conditions < 1:
+            raise HTTPException(
+                status_code=409,
+                detail="missing conditions",
+            )
+
+        if conditions > 1:
+            raise HTTPException(
+                status_code=409,
+                detail="accepted conditions are: min or max or eq or like or (min and max)",
+            )
+
+        if order_by is not None and order_by not in columns:
             raise HTTPException(
                 status_code=409,
                 detail=f"order_by must be a valid column from {columns.keys()}",
@@ -168,10 +181,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if selectexp is None:
             selectexp = select(self.model)
 
-        if order == IOrderEnum.ascendent:
-            query = selectexp.where(criteria).order_by(order_by.asc())
-        else:
-            query = selectexp.where(criteria).order_by(order_by.desc())
+        query = selectexp.where(criteria)
+
+        if order_by is not None:
+            if order == IOrderEnum.ascendent:
+                query = query.order_by(order_by.asc())
+            else:
+                query = query.order_by(order_by.desc())
 
         logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)
@@ -204,6 +220,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     status_code=409,
                     detail=f"element {c} of group_by not a valid value from {columns.keys()}",
                 )
+
+        operations = group_by + avg + min + max + sum + count
+
+        if len(operations) != len(set(operations)):
+            raise HTTPException(
+                status_code=409,
+                detail="ambigious query each element must apear once",
+            )
 
         clauses = tuple(columns[c] for c in group_by)
         selection = clauses
@@ -261,13 +285,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         columns = self.model.__table__.columns
 
-        if order_by not in columns or order_by is None:
-            order_by = self.model.id
-
-        if order == IOrderEnum.ascendent:
-            query = select(self.model).offset(skip).limit(limit).order_by(columns[order_by.value].asc())
+        if order_by is not None and order_by not in columns:
+            raise HTTPException(
+                status_code=409,
+                detail=f"order_by must be a valid column from {columns.keys()}",
+            )
         else:
-            query = select(self.model).offset(skip).limit(limit).order_by(columns[order_by.value].desc())
+            order_by = columns[order_by]
+
+        query = select(self.model).offset(skip).limit(limit)
+
+        if order_by is not None:
+            if order == IOrderEnum.ascendent:
+                query = query.order_by(order_by.asc())
+            else:
+                query = query.order_by(order_by.desc())
 
         logging.debug(f"Exec query: {query}")
         response = await db_session.execute(query)

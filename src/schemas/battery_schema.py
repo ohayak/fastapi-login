@@ -1,6 +1,3 @@
-from pydantic import BaseModel, create_model
-from sqlmodel import SQLModel
-
 from models.battery_model import (
     BatteryCell,
     BatteryCompany,
