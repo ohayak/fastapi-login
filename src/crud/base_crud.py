@@ -93,13 +93,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         columns = self.model.__table__.columns
 
-        if order_by is not None and order_by not in columns:
-            raise HTTPException(
-                status_code=409,
-                detail=f"order_by must be a valid column from {columns.keys()}",
-            )
-        else:
-            order_by = columns[order_by]
+        if order_by is not None:
+            if order_by not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"order_by must be a valid column from {columns.keys()}",
+                )
+            else:
+                order_by = columns[order_by]
 
         if selectexp is None:
             selectexp = select(self.model)
@@ -158,13 +159,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 detail="accepted conditions are: min or max or eq or like or (min and max)",
             )
 
-        if order_by is not None and order_by not in columns:
-            raise HTTPException(
-                status_code=409,
-                detail=f"order_by must be a valid column from {columns.keys()}",
-            )
-        else:
-            order_by = columns[order_by]
+        if order_by is not None:
+            if order_by not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"order_by must be a valid column from {columns.keys()}",
+                )
+            else:
+                order_by = columns[order_by]
 
         criteria = ()
         if min and max:
@@ -285,13 +287,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         columns = self.model.__table__.columns
 
-        if order_by is not None and order_by not in columns:
-            raise HTTPException(
-                status_code=409,
-                detail=f"order_by must be a valid column from {columns.keys()}",
-            )
-        else:
-            order_by = columns[order_by]
+        if order_by is not None:
+            if order_by not in columns:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"order_by must be a valid column from {columns.keys()}",
+                )
+            else:
+                order_by = columns[order_by]
 
         query = select(self.model).offset(skip).limit(limit)
 
