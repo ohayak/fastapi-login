@@ -120,7 +120,7 @@ async def get_infos_filtred(
         order=conds.order,
         db_session=db,
     )
-    return create_response(data=infos)
+    return create_response(data=infos, meta=conds)
 
 
 @router.get(
@@ -165,7 +165,7 @@ async def get_evolution_filtered(
         order=conds.order,
         db_session=db,
     )
-    return create_response(data=evolution)
+    return create_response(data=evolution, meta=conds)
 
 
 @router.get(
@@ -193,7 +193,7 @@ async def get_review_filtered(
         order=conds.order,
         db_session=db,
     )
-    return create_response(data=review)
+    return create_response(data=review, meta=conds)
 
 
 @router.get(
@@ -221,7 +221,7 @@ async def get_state_filtered(
         order=conds.order,
         db_session=db,
     )
-    return create_response(data=state)
+    return create_response(data=state, meta=conds)
 
 
 @router.get(
@@ -249,7 +249,7 @@ async def get_state_info_filtered(
         order=conds.order,
         db_session=db,
     )
-    return create_response(data=state)
+    return create_response(data=state, meta=conds)
 
 
 @router.post(
