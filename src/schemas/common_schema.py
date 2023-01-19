@@ -1,5 +1,6 @@
+from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional
+from typing import List, Optional, Union
 
 from fastapi import Body, Query
 from pydantic import BaseModel
@@ -21,11 +22,11 @@ class TokenType(str, Enum):
     REFRESH = "refresh_token"
 
 
-class Conds(BaseModel):
+class FilterQuery(BaseModel):
     filter_by: Optional[str] = None
-    min: Any = None
-    max: Any = None
-    eq: Any = None
+    min: Union[float, datetime, str, None] = None
+    max: Union[float, datetime, str, None] = None
+    eq: Union[float, datetime, bool, str, None] = None
     like: str = None
     order_by: Optional[str] = None
     order: Optional[IOrderEnum] = IOrderEnum.ascendent

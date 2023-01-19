@@ -170,7 +170,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         criteria = ()
         if min and max:
-            criteria = and_(filter_by >= min, filter_by <= max)
+            criteria = and_(min <= filter_by, filter_by <= max)
         elif max:
             criteria = filter_by <= max
         elif min:

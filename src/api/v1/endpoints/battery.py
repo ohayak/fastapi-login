@@ -18,7 +18,7 @@ from schemas.battery_schema import (
     IBatteryStateInfoRead,
     IBatteryStateRead,
 )
-from schemas.common_schema import AggRequestForm, Conds, IOrderEnum
+from schemas.common_schema import AggRequestForm, FilterQuery, IOrderEnum
 from schemas.response_schema import (
     IGetResponseBase,
     IGetResponsePaginated,
@@ -101,7 +101,7 @@ async def get_model_by_ref(
 
 @router.get("/info", response_model=IGetResponsePaginated[IBatteryInfoRead])
 async def get_infos_filtred(
-    conds: Conds = Depends(),
+    query: FilterQuery = Depends(),
     params: Params = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
@@ -110,17 +110,17 @@ async def get_infos_filtred(
     Gets a paginated list of infos
     """
     infos = await crud.batinfo.get_multi_filtered_paginated_ordered(
-        filter_by=conds.filter_by,
-        min=conds.min,
-        max=conds.max,
-        eq=conds.eq,
-        like=conds.like,
+        filter_by=query.filter_by,
+        min=query.min,
+        max=query.max,
+        eq=query.eq,
+        like=query.like,
         params=params,
-        order_by=conds.order_by,
-        order=conds.order,
+        order_by=query.order_by,
+        order=query.order,
         db_session=db,
     )
-    return create_response(data=infos, meta=conds)
+    return create_response(data=infos, meta={"quey": query})
 
 
 @router.get(
@@ -146,7 +146,7 @@ async def get_info_by_ref(
 )
 async def get_evolution_filtered(
     schema: str,
-    conds: Conds = Depends(),
+    query: FilterQuery = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -155,17 +155,17 @@ async def get_evolution_filtered(
     Gets a filtred paginated list of evolutions
     """
     evolution = await crud.batevolution.get_multi_filtered_paginated_ordered(
-        filter_by=conds.filter_by,
-        min=conds.min,
-        max=conds.max,
-        eq=conds.eq,
-        like=conds.like,
+        filter_by=query.filter_by,
+        min=query.min,
+        max=query.max,
+        eq=query.eq,
+        like=query.like,
         params=params,
-        order_by=conds.order_by,
-        order=conds.order,
+        order_by=query.order_by,
+        order=query.order,
         db_session=db,
     )
-    return create_response(data=evolution, meta=conds)
+    return create_response(data=evolution, meta={"quey": query})
 
 
 @router.get(
@@ -174,7 +174,7 @@ async def get_evolution_filtered(
 )
 async def get_review_filtered(
     schema: str,
-    conds: Conds = Depends(),
+    query: FilterQuery = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -183,17 +183,17 @@ async def get_review_filtered(
     Gets a filtred paginated list of reviews
     """
     review = await crud.batreview.get_multi_filtered_paginated_ordered(
-        filter_by=conds.filter_by,
-        min=conds.min,
-        max=conds.max,
-        eq=conds.eq,
-        like=conds.like,
+        filter_by=query.filter_by,
+        min=query.min,
+        max=query.max,
+        eq=query.eq,
+        like=query.like,
         params=params,
-        order_by=conds.order_by,
-        order=conds.order,
+        order_by=query.order_by,
+        order=query.order,
         db_session=db,
     )
-    return create_response(data=review, meta=conds)
+    return create_response(data=review, meta={"quey": query})
 
 
 @router.get(
@@ -202,7 +202,7 @@ async def get_review_filtered(
 )
 async def get_state_filtered(
     schema: str,
-    conds: Conds = Depends(),
+    query: FilterQuery = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -211,17 +211,17 @@ async def get_state_filtered(
     Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_multi_filtered_paginated_ordered(
-        filter_by=conds.filter_by,
-        min=conds.min,
-        max=conds.max,
-        eq=conds.eq,
-        like=conds.like,
+        filter_by=query.filter_by,
+        min=query.min,
+        max=query.max,
+        eq=query.eq,
+        like=query.like,
         params=params,
-        order_by=conds.order_by,
-        order=conds.order,
+        order_by=query.order_by,
+        order=query.order,
         db_session=db,
     )
-    return create_response(data=state, meta=conds)
+    return create_response(data=state, meta={"quey": query})
 
 
 @router.get(
@@ -230,7 +230,7 @@ async def get_state_filtered(
 )
 async def get_state_info_filtered(
     schema: str,
-    conds: Conds = Depends(),
+    query: FilterQuery = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
     db=Depends(deps.get_db_by_schema),
@@ -239,17 +239,17 @@ async def get_state_info_filtered(
     Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_state_info(
-        filter_by=conds.filter_by,
-        min=conds.min,
-        max=conds.max,
-        eq=conds.eq,
-        like=conds.like,
+        filter_by=query.filter_by,
+        min=query.min,
+        max=query.max,
+        eq=query.eq,
+        like=query.like,
         params=params,
-        order_by=conds.order_by,
-        order=conds.order,
+        order_by=query.order_by,
+        order=query.order,
         db_session=db,
     )
-    return create_response(data=state, meta=conds)
+    return create_response(data=state, meta={"quey": query})
 
 
 @router.post(
@@ -277,7 +277,7 @@ async def post_evolution_agg(
         params=params,
         db_session=db,
     )
-    return create_response(meta=payload, data=evolution)
+    return create_response(data=evolution, meta={"quey": payload})
 
 
 @router.post(
@@ -305,7 +305,7 @@ async def post_review_agg(
         params=params,
         db_session=db,
     )
-    return create_response(meta=payload, data=review)
+    return create_response(data=review, meta={"quey": payload})
 
 
 @router.post(
@@ -333,4 +333,4 @@ async def post_state_agg(
         params=params,
         db_session=db,
     )
-    return create_response(meta=payload, data=state)
+    return create_response(data=state, meta={"quey": payload})

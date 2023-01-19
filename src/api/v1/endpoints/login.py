@@ -136,7 +136,7 @@ async def token(
     elif form_data.grant_type == "refresh_token":
         data = await _refresh_token(form_data.refresh_token, redis_client)
     else:
-        raise HTTPException(status_code=400, detail="unsupported_grant_type")
+        raise HTTPException(status_code=400, detail="invalid_grant")
     return data
 
 
