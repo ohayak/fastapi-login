@@ -29,10 +29,9 @@ IBatteryStateRead: Model = make_schema_from_orm(BatteryState, model_name="IBatte
 
 
 IBatteryStateInfoRead: Model = make_schema_from_orm(
-    BatteryState,
     BatteryInfo,
+    BatteryState,
     model_name="IBatteryStateInfoRead",
-    exclude=("id", "created_at", "updated_at", "company_id"),
 )
 
 

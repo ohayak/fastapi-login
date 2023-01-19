@@ -111,7 +111,7 @@ def make_schema_from_orm(
 ) -> Model:
     """Convert SQLAlchemy model to Pydantic dataclass scheme.
 
-    :param db_models: SQLAlchemy model class, not instance
+    :param db_models: SQLAlchemy model class, not instance. Order matters, if duplicated fields keep most right element
     :param model_name: New model name. Structure: '{db_model} your_name'
     :param include: tuple of included elements, may be contain Pydantic
             model class or Dict[str: (type, field)]

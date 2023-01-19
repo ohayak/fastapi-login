@@ -23,17 +23,17 @@ class TokenType(str, Enum):
 
 
 class FilterQuery(BaseModel):
-    filter_by: Optional[str] = None
-    min: Union[float, datetime, str, None] = None
-    max: Union[float, datetime, str, None] = None
-    eq: Union[float, datetime, bool, str, None] = None
-    like: str = None
-    order_by: Optional[str] = None
-    order: Optional[IOrderEnum] = IOrderEnum.ascendent
+    filter_by: Optional[str] = Query(None)
+    min: Union[float, datetime, str, None] = Query(None)
+    max: Union[float, datetime, str, None] = Query(None)
+    eq: Union[float, datetime, bool, str, None] = Query(None)
+    like: str = Query(None)
+    order_by: Optional[str] = Query(None)
+    order: Optional[IOrderEnum] = Query(IOrderEnum.ascendent)
 
 
-class AggRequestForm(BaseModel):
-    group_by: List[str] = Body(description="compute avg for these columns")
+class GroupQuery(BaseModel):
+    group_by: List[str] = Body([], description="group by keys")
     avg: List[str] = Body([], description="compute avg for these columns")
     sum: List[str] = Body([], description="compute sum for these columns")
     min: List[str] = Body([], description="compute min for these columns")

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import UUID
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.async_sqlalchemy import paginate
@@ -14,7 +14,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
 from db.asqlalchemy import db
-from schemas.common_schema import IOrderEnum
+from schemas.common_schema import FilterQuery, GroupQuery, IOrderEnum
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -57,9 +57,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi(
         self,
         *,
+        query: Optional[Union[T, Select[T]]] = None,
         skip: int = 0,
         limit: int = 100,
-        query: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> List[ModelType]:
         db_session = db_session or db.session
@@ -71,8 +71,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi_paginated(
         self,
         *,
-        params: Optional[Params] = Params(),
         query: Optional[Union[T, Select[T]]] = None,
+        params: Optional[Params] = Params(),
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
         db_session = db_session or db.session
@@ -83,9 +83,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi_paginated_ordered(
         self,
         *,
-        params: Optional[Params] = Params(),
         order_by: Optional[str] = None,
         order: Optional[IOrderEnum] = IOrderEnum.ascendent,
+        params: Optional[Params] = Params(),
         selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
@@ -96,7 +96,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if order_by is not None:
             if order_by not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"order_by must be a valid column from {columns.keys()}",
                 )
             else:
@@ -119,17 +119,19 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi_filtered_paginated_ordered(
         self,
         *,
-        filter_by: Optional[str] = None,
-        min: Any = None,
-        max: Any = None,
-        eq: Any = None,
-        like: str = None,
+        filters: FilterQuery = FilterQuery(),
         params: Optional[Params] = Params(),
-        order_by: Optional[str] = None,
-        order: Optional[IOrderEnum] = IOrderEnum.ascendent,
         selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
+        filter_by = filters.filter_by
+        min = filters.min
+        max = filters.max
+        eq = filters.eq
+        like = filters.like
+        order_by = filters.order_by
+        order = filters.order
+
         db_session = db_session or db.session
         columns = self.model.__table__.columns
 
@@ -139,7 +141,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             )
         elif filter_by not in columns:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail=f"filter_by must be a valid column from {columns.keys()}",
             )
         else:
@@ -149,20 +151,20 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         if filter_by is not None and conditions < 1:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="missing conditions",
             )
 
         if conditions > 1:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="accepted conditions are: min or max or eq or like or (min and max)",
             )
 
         if order_by is not None:
             if order_by not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"order_by must be a valid column from {columns.keys()}",
                 )
             else:
@@ -197,29 +199,31 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi_grouped_paginated(
         self,
         *,
-        group_by: List[str],
-        avg: List[str] = [],
-        min: List[str] = [],
-        max: List[str] = [],
-        sum: List[str] = [],
-        count: List[str] = [],
+        groups: GroupQuery = GroupQuery(),
         params: Optional[Params] = Params(),
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
+        group_by = groups.group_by
+        avg = groups.avg
+        min = groups.min
+        max = groups.max
+        sum = groups.sum
+        count = groups.count
+
         db_session = db_session or db.session
 
         columns = self.model.__table__.columns
 
         if not group_by:
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="group_by can't be empty",
             )
 
         for c in group_by:
             if c not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of group_by not a valid value from {columns.keys()}",
                 )
 
@@ -227,7 +231,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         if len(operations) != len(set(operations)):
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="ambigious query each element must apear once",
             )
 
@@ -236,35 +240,35 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         for c in avg:
             if c not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of avg not a valid value from {columns.keys()}",
                 )
             selection = selection + (func.avg(columns[c]).label(c),)
         for c in min:
             if c not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of min not a valid value from {columns.keys()}",
                 )
             selection = selection + (func.min(columns[c]).label(c),)
         for c in max:
             if c not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of max not a valid value from {columns.keys()}",
                 )
             selection = selection + (func.max(columns[c]).label(c),)
         for c in count:
             if c not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of count not a valid value from {columns.keys()}",
                 )
             selection = selection + (func.count(columns[c]).label(c),)
         for c in sum:
             if c not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of sum not a valid value from {columns.keys()}",
                 )
             selection = selection + (func.sum(columns[c]).label(c),)
@@ -290,7 +294,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if order_by is not None:
             if order_by not in columns:
                 raise HTTPException(
-                    status_code=409,
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"order_by must be a valid column from {columns.keys()}",
                 )
             else:
@@ -328,7 +332,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         except exc.IntegrityError:
             db_session.rollback()
             raise HTTPException(
-                status_code=409,
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="Resource already exists",
             )
         await db_session.refresh(db_obj)

@@ -18,7 +18,7 @@ from schemas.battery_schema import (
     IBatteryStateInfoRead,
     IBatteryStateRead,
 )
-from schemas.common_schema import AggRequestForm, FilterQuery, IOrderEnum
+from schemas.common_schema import FilterQuery, GroupQuery, IOrderEnum
 from schemas.response_schema import (
     IGetResponseBase,
     IGetResponsePaginated,
@@ -110,14 +110,8 @@ async def get_infos_filtred(
     Gets a paginated list of infos
     """
     infos = await crud.batinfo.get_multi_filtered_paginated_ordered(
-        filter_by=query.filter_by,
-        min=query.min,
-        max=query.max,
-        eq=query.eq,
-        like=query.like,
+        filters=query,
         params=params,
-        order_by=query.order_by,
-        order=query.order,
         db_session=db,
     )
     return create_response(data=infos, meta={"quey": query})
@@ -147,22 +141,16 @@ async def get_info_by_ref(
 async def get_evolution_filtered(
     schema: str,
     query: FilterQuery = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a filtred paginated list of evolutions
     """
     evolution = await crud.batevolution.get_multi_filtered_paginated_ordered(
-        filter_by=query.filter_by,
-        min=query.min,
-        max=query.max,
-        eq=query.eq,
-        like=query.like,
+        filters=query,
         params=params,
-        order_by=query.order_by,
-        order=query.order,
         db_session=db,
     )
     return create_response(data=evolution, meta={"quey": query})
@@ -175,22 +163,16 @@ async def get_evolution_filtered(
 async def get_review_filtered(
     schema: str,
     query: FilterQuery = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a filtred paginated list of reviews
     """
     review = await crud.batreview.get_multi_filtered_paginated_ordered(
-        filter_by=query.filter_by,
-        min=query.min,
-        max=query.max,
-        eq=query.eq,
-        like=query.like,
+        filters=query,
         params=params,
-        order_by=query.order_by,
-        order=query.order,
         db_session=db,
     )
     return create_response(data=review, meta={"quey": query})
@@ -203,22 +185,16 @@ async def get_review_filtered(
 async def get_state_filtered(
     schema: str,
     query: FilterQuery = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_multi_filtered_paginated_ordered(
-        filter_by=query.filter_by,
-        min=query.min,
-        max=query.max,
-        eq=query.eq,
-        like=query.like,
+        filters=query,
         params=params,
-        order_by=query.order_by,
-        order=query.order,
         db_session=db,
     )
     return create_response(data=state, meta={"quey": query})
@@ -231,22 +207,16 @@ async def get_state_filtered(
 async def get_state_info_filtered(
     schema: str,
     query: FilterQuery = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
     params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a filtred paginated list of states
     """
     state = await crud.batstate.get_state_info(
-        filter_by=query.filter_by,
-        min=query.min,
-        max=query.max,
-        eq=query.eq,
-        like=query.like,
+        filters=query,
         params=params,
-        order_by=query.order_by,
-        order=query.order,
         db_session=db,
     )
     return create_response(data=state, meta={"quey": query})
@@ -259,25 +229,20 @@ async def get_state_info_filtered(
 )
 async def post_evolution_agg(
     schema: str,
-    payload: AggRequestForm,
-    current_user: User = Depends(deps.get_current_user()),
+    query: GroupQuery = Depends(),
     params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a filtred paginated list of evolutions
     """
     evolution = await crud.batevolution.get_multi_grouped_paginated(
-        group_by=payload.group_by,
-        avg=payload.avg,
-        min=payload.min,
-        max=payload.max,
-        sum=payload.sum,
-        count=payload.count,
+        groups=query,
         params=params,
         db_session=db,
     )
-    return create_response(data=evolution, meta={"quey": payload})
+    return create_response(data=evolution, meta={"quey": query})
 
 
 @router.post(
@@ -287,25 +252,20 @@ async def post_evolution_agg(
 )
 async def post_review_agg(
     schema: str,
-    payload: AggRequestForm,
-    current_user: User = Depends(deps.get_current_user()),
+    query: GroupQuery = Depends(),
     params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a filtred paginated list of reviews
     """
     review = await crud.batreview.get_multi_grouped_paginated(
-        group_by=payload.group_by,
-        avg=payload.avg,
-        min=payload.min,
-        max=payload.max,
-        sum=payload.sum,
-        count=payload.count,
+        groups=query,
         params=params,
         db_session=db,
     )
-    return create_response(data=review, meta={"quey": payload})
+    return create_response(data=review, meta={"quey": query})
 
 
 @router.post(
@@ -315,22 +275,17 @@ async def post_review_agg(
 )
 async def post_state_agg(
     schema: str,
-    payload: AggRequestForm,
-    current_user: User = Depends(deps.get_current_user()),
+    query: GroupQuery = Depends(),
     params: Params = Depends(),
+    current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
 ):
     """
     Gets a filtred paginated list of state
     """
     state = await crud.batstate.get_multi_grouped_paginated(
-        group_by=payload.group_by,
-        avg=payload.avg,
-        min=payload.min,
-        max=payload.max,
-        sum=payload.sum,
-        count=payload.count,
+        groups=query,
         params=params,
         db_session=db,
     )
-    return create_response(data=state, meta={"quey": payload})
+    return create_response(data=state, meta={"quey": query})
