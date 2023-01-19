@@ -2,8 +2,6 @@
 
 set -Eeuo pipefail
 
-script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
-
 trap cleanup SIGINT SIGTERM ERR EXIT
 
 parse_params() {

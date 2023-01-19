@@ -109,7 +109,7 @@ async def add_user_into_a_company(
     return create_response(message="User added to company", data=company)
 
 
-@router.post("/romeve_user/{user_id}/{company_id}", response_model=IPostResponseBase[ICompanyRead])
+@router.post("/remove_user/{user_id}/{company_id}", response_model=IPostResponseBase[ICompanyRead])
 async def remove_user_from_company(
     user_id: UUID,
     company_id: UUID,
