@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, Depends, Path, Query, status
 from fastapi_pagination import Params
 from sqlmodel import select
 
-import crud
+import crud.battery_crud as crud
 from api import deps
 from models.battery_model import BatteryCell, BatteryInfo, BatteryModel
 from models.user_model import User

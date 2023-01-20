@@ -59,6 +59,13 @@ async def root():
 @app.on_event("startup")
 async def on_startup():
     redis_client = await get_redis_client()
+
+    try:
+        await redis_client.ping()
+    except Exception as e:
+        logging.error("Redis server not responding")
+        raise e
+
     FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
     logging.info("startup fastapi")
 

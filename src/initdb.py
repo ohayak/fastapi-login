@@ -10,7 +10,7 @@ from db.session import SessionLocal
 from schemas.company_schema import ICompanyCreate
 from schemas.group_schema import IGroupCreate
 from schemas.role_schema import IRoleCreate
-from schemas.user_schema import IUserCreate, IUserRead
+from schemas.user_schema import IUserCreate
 
 roles: List[IRoleCreate] = [
     IRoleCreate(name="admin", description="Admin role"),

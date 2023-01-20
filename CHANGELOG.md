@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 
+## [1.2.4] - 2023-20-01
+
+- solve initdb error ehen starting api before worker
+- raise error if Redis not started
+
 ## [1.2.3]
 
 - battery company data endpoint
