@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Literal, Optional, Type, TypeVar, Union
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -9,7 +9,8 @@ from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import exc
-from sqlmodel import SQLModel, and_, func, literal, select, type_coerce
+from sqlalchemy.sql.expression import ColumnCollection
+from sqlmodel import ARRAY, SQLModel, Unicode, and_, func, literal, select, type_coerce
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
@@ -116,38 +117,31 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)
 
-    async def get_multi_filtered_paginated_ordered(
+    def _select_from_filter(
         self,
-        *,
-        filters: FilterQuery = FilterQuery(),
-        params: Optional[Params] = Params(),
+        columns: Union[ColumnCollection, Dict],
+        query: FilterQuery,
         selectexp: Optional[Union[T, Select[T]]] = None,
-        db_session: Optional[AsyncSession] = None,
-    ) -> Page[ModelType]:
-        filter_by = filters.filter_by
-        min = filters.min
-        max = filters.max
-        eq = filters.eq
-        like = filters.like
-        order_by = filters.order_by
-        order = filters.order
+        clause: Literal["where", "filter", "having"] = "where",
+    ):
+        filter_by = query.filter_by
+        min = query.min
+        max = query.max
+        eq = query.eq
+        isin = query.isin
+        like = query.like
+        order_by = query.order_by
+        order = query.order
 
-        db_session = db_session or db.session
-        columns = self.model.__table__.columns
-
-        if filter_by is None:
-            return await self.get_multi_paginated_ordered(
-                params=params, order_by=order_by, order=order, selectexp=selectexp, db_session=db_session
-            )
-        elif filter_by not in columns:
-            raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail=f"filter_by must be a valid column from {columns.keys()}",
-            )
-        else:
-            filter_by = columns[filter_by]
-
-        conditions = sum([(min is not None) or (max is not None), (eq is not None), (like is not None)])
+        if filter_by is not None:
+            if filter_by not in columns:
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail=f"filter_by must be a valid column from {columns.keys()}",
+                )
+        conditions = sum(
+            [(min is not None) or (max is not None), (eq is not None), (like is not None), (isin is not None)]
+        )
 
         if filter_by is not None and conditions < 1:
             raise HTTPException(
@@ -167,8 +161,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"order_by must be a valid column from {columns.keys()}",
                 )
-            else:
-                order_by = columns[order_by]
+
+        filter_by = columns[filter_by]
 
         criteria = ()
         if min and max:
@@ -181,17 +175,50 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             criteria = filter_by == eq
         elif like:
             criteria = filter_by.ilike(f"%{like}%")
+        elif isin:
+            criteria = filter_by.in_(isin)
 
         if selectexp is None:
             selectexp = select(self.model)
 
-        query = selectexp.where(criteria)
+        if clause == "having":
+            query = selectexp.having(criteria)
+        elif clause == "filter":
+            query = selectexp.filter(criteria)
+        else:
+            query = selectexp.where(criteria)
 
         if order_by is not None:
+            order_by = columns[order_by]
             if order == IOrderEnum.ascendent:
                 query = query.order_by(order_by.asc())
             else:
                 query = query.order_by(order_by.desc())
+
+        return query
+
+    async def get_multi_filtered_paginated_ordered(
+        self,
+        *,
+        filters: FilterQuery = FilterQuery(),
+        params: Optional[Params] = Params(),
+        selectexp: Optional[Union[T, Select[T]]] = None,
+        db_session: Optional[AsyncSession] = None,
+    ) -> Page[ModelType]:
+
+        db_session = db_session or db.session
+        columns = self.model.__table__.columns
+
+        if filters.filter_by is None:
+            return await self.get_multi_paginated_ordered(
+                params=params,
+                order_by=filters.order_by,
+                order=filters.order,
+                selectexp=selectexp,
+                db_session=db_session,
+            )
+
+        query = self._select_from_filter(columns, filters, selectexp)
 
         logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)
@@ -199,20 +226,22 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi_grouped_paginated(
         self,
         *,
+        filters: FilterQuery = FilterQuery(),
         groups: GroupQuery = GroupQuery(),
         params: Optional[Params] = Params(),
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
         group_by = groups.group_by
         avg = groups.avg
         min = groups.min
         max = groups.max
         sum = groups.sum
         count = groups.count
-
-        db_session = db_session or db.session
-
-        columns = self.model.__table__.columns
+        array = groups.array
 
         if not group_by:
             raise HTTPException(
@@ -227,7 +256,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     detail=f"element {c} of group_by not a valid value from {columns.keys()}",
                 )
 
-        operations = group_by + avg + min + max + sum + count
+        operations = group_by + avg + min + max + sum + count + array
 
         if len(operations) != len(set(operations)):
             raise HTTPException(
@@ -235,45 +264,75 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 detail="ambigious query each element must apear once",
             )
 
-        clauses = tuple(columns[c] for c in group_by)
-        selection = clauses
+        filter_cols = {}
+        clauses = ()
+        for c in group_by:
+            filter_cols[c] = columns[c]
+            clauses += (columns[c],)
+
+        agg = func.count().label("count")
+        filter_cols[agg.name] = agg
+        selection = (agg,) + clauses
+
         for c in avg:
             if c not in columns:
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of avg not a valid value from {columns.keys()}",
                 )
-            selection = selection + (func.avg(columns[c]).label(c),)
+            agg = func.avg(columns[c]).label(c)
+            filter_cols[agg.name] = agg
+            selection = selection + (agg,)
         for c in min:
             if c not in columns:
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of min not a valid value from {columns.keys()}",
                 )
-            selection = selection + (func.min(columns[c]).label(c),)
+            agg = func.min(columns[c]).label(c)
+            filter_cols[agg.name] = agg
+            selection = selection + (agg,)
         for c in max:
             if c not in columns:
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of max not a valid value from {columns.keys()}",
                 )
-            selection = selection + (func.max(columns[c]).label(c),)
+            agg = func.max(columns[c]).label(c)
+            filter_cols[agg.name] = agg
+            selection = selection + (agg,)
         for c in count:
             if c not in columns:
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of count not a valid value from {columns.keys()}",
                 )
-            selection = selection + (func.count(columns[c]).label(c),)
+            agg = func.count(columns[c]).label(c)
+            filter_cols[agg.name] = agg
+            selection = selection + (agg,)
         for c in sum:
             if c not in columns:
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     detail=f"element {c} of sum not a valid value from {columns.keys()}",
                 )
-            selection = selection + (func.sum(columns[c]).label(c),)
+            agg = func.sum(columns[c]).label(c)
+            filter_cols[agg.name] = agg
+            selection = selection + (agg,)
+        for c in array:
+            if c not in columns:
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail=f"element {c} of array not a valid value from {columns.keys()}",
+                )
+            agg = func.array_agg(columns[c], type_=ARRAY(Unicode, as_tuple=True)).label(c)
+            filter_cols[agg.name] = agg
+            selection = selection + (agg,)
 
         query = select(selection).group_by(*clauses)
+
+        if filters.filter_by is not None:
+            query = self._select_from_filter(filter_cols, filters, query, clause="having")
 
         logging.debug(f"Paginate query: {query}")
         return await paginate(db_session, query, params)

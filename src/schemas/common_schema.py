@@ -27,6 +27,9 @@ class FilterQuery(BaseModel):
     min: Union[float, datetime, str, None] = Query(None)
     max: Union[float, datetime, str, None] = Query(None)
     eq: Union[float, datetime, bool, str, None] = Query(None)
+    # isin not working as expected
+    # See https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values
+    isin: Optional[List[Union[float, datetime, bool, str, None]]] = Query(None, include_in_schema=False)
     like: str = Query(None)
     order_by: Optional[str] = Query(None)
     order: Optional[IOrderEnum] = Query(IOrderEnum.ascendent)
@@ -39,3 +42,5 @@ class GroupQuery(BaseModel):
     min: List[str] = Body([], description="compute min for these columns")
     max: List[str] = Body([], description="compute max for these columns")
     count: List[str] = Body([], description="compute count for these columns")
+    array: List[str] = Body([], description="array aggregation for these columns")
+    coalesce: List[str] = Body([], description="apply coalesce for these columns")

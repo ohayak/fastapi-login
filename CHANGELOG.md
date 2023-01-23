@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 
+## [1.2.5] - 2023-23-01
+
+- add filters to aggregation query
+- add array aggeration
+- add group count to aggregation result
+
 ## [1.2.4] - 2023-20-01
 
 - solve initdb error ehen starting api before worker

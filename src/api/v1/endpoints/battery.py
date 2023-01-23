@@ -229,7 +229,8 @@ async def get_state_info_filtered(
 )
 async def post_evolution_agg(
     schema: str,
-    query: GroupQuery = Depends(),
+    query: FilterQuery = Depends(),
+    body: GroupQuery = Depends(),
     params: Params = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
@@ -238,11 +239,12 @@ async def post_evolution_agg(
     Gets a filtred paginated list of evolutions
     """
     evolution = await crud.batevolution.get_multi_grouped_paginated(
-        groups=query,
+        filters=query,
+        groups=body,
         params=params,
         db_session=db,
     )
-    return create_response(data=evolution, meta={"quey": query})
+    return create_response(data=evolution, meta={"quey": body})
 
 
 @router.post(
@@ -252,7 +254,8 @@ async def post_evolution_agg(
 )
 async def post_review_agg(
     schema: str,
-    query: GroupQuery = Depends(),
+    query: FilterQuery = Depends(),
+    body: GroupQuery = Depends(),
     params: Params = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
@@ -261,11 +264,12 @@ async def post_review_agg(
     Gets a filtred paginated list of reviews
     """
     review = await crud.batreview.get_multi_grouped_paginated(
-        groups=query,
+        filters=query,
+        groups=body,
         params=params,
         db_session=db,
     )
-    return create_response(data=review, meta={"quey": query})
+    return create_response(data=review, meta={"quey": body})
 
 
 @router.post(
@@ -275,7 +279,8 @@ async def post_review_agg(
 )
 async def post_state_agg(
     schema: str,
-    query: GroupQuery = Depends(),
+    query: FilterQuery = Depends(),
+    body: GroupQuery = Depends(),
     params: Params = Depends(),
     current_user: User = Depends(deps.get_current_user()),
     db=Depends(deps.get_db_by_schema),
@@ -284,8 +289,9 @@ async def post_state_agg(
     Gets a filtred paginated list of state
     """
     state = await crud.batstate.get_multi_grouped_paginated(
-        groups=query,
+        filters=query,
+        groups=body,
         params=params,
         db_session=db,
     )
-    return create_response(data=state, meta={"quey": query})
+    return create_response(data=state, meta={"quey": body})
