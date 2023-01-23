@@ -27,12 +27,12 @@ class FilterQuery(BaseModel):
     min: Union[float, datetime, str, None] = Query(None)
     max: Union[float, datetime, str, None] = Query(None)
     eq: Union[float, datetime, bool, str, None] = Query(None)
-    # isin not working as expected
-    # See https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values
-    isin: Optional[List[Union[float, datetime, bool, str, None]]] = Query(None, include_in_schema=False)
     like: str = Query(None)
     order_by: Optional[str] = Query(None)
     order: Optional[IOrderEnum] = Query(IOrderEnum.ascendent)
+    # isin not working as expected
+    # See https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values
+    isin: Optional[List[Union[float, datetime, bool, str, None]]] = Query(None, include_in_schema=False)
 
 
 class GroupQuery(BaseModel):
