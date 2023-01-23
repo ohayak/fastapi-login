@@ -43,4 +43,3 @@ class GroupQuery(BaseModel):
     max: List[str] = Body([], description="compute max for these columns")
     count: List[str] = Body([], description="compute count for these columns")
     array: List[str] = Body([], description="array aggregation for these columns")
-    coalesce: List[str] = Body([], description="apply coalesce for these columns")
