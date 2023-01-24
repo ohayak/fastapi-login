@@ -8,11 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 
+## [1.2.6] - 2023-24-01
+
+- add isin operation for filter query
+
 ## [1.2.5] - 2023-23-01
 
 - add filters to aggregation query
 - add array aggeration
 - add group count to aggregation result
+- fix change-password
 
 ## [1.2.4] - 2023-20-01
 

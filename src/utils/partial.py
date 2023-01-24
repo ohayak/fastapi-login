@@ -4,7 +4,6 @@
 import inspect
 
 from pydantic import BaseModel
-from pydantic.fields import ModelField
 
 
 def optional(*fields):

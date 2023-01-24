@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Optional, Union
 
 from fastapi import Body, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from schemas.role_schema import IRoleRead
 
@@ -28,11 +28,10 @@ class FilterQuery(BaseModel):
     max: Union[float, datetime, str, None] = Query(None)
     eq: Union[float, datetime, bool, str, None] = Query(None)
     like: str = Query(None)
+    # Fix for https://github.com/tiangolo/fastapi/issues/4445
+    isin: Optional[List[Union[float, datetime, bool, str, None]]] = Field(Query(None))
     order_by: Optional[str] = Query(None)
     order: Optional[IOrderEnum] = Query(IOrderEnum.ascendent)
-    # isin not working as expected
-    # See https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values
-    isin: Optional[List[Union[float, datetime, bool, str, None]]] = Query(None, include_in_schema=False)
 
 
 class GroupQuery(BaseModel):
