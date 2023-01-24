@@ -198,6 +198,7 @@ async def change_password(
         access_token=access_token,
         token_type="Bearer",
         refresh_token=refresh_token,
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=current_user,
     )
 
