@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - add isin operation for filter query
 - better error response for programingErrors
+- add filter operations: neq, isnull, isnotnull, isnotin
 
 ## [1.2.5] - 2023-23-01
 

@@ -10,7 +10,7 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import exc
 from sqlalchemy.sql.expression import ColumnCollection
-from sqlmodel import ARRAY, SQLModel, Unicode, and_, func, literal, select, type_coerce
+from sqlmodel import ARRAY, SQLModel, Unicode, and_, func, literal, or_, select, type_coerce
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
@@ -143,7 +143,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         min = query.min
         max = query.max
         eq = query.eq
+        neq = query.neq
+        nullable = query.nullable
         isin = query.isin
+        isnotin = query.isnotin
         like = query.like
         order_by = query.order_by
         order = query.order
@@ -161,18 +164,39 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 )
 
             conditions = sum(
-                [(min is not None) or (max is not None), (eq is not None), (like is not None), (isin is not None)]
+                [
+                    (min is not None) or (max is not None),
+                    (eq is not None),
+                    (neq is not None),
+                    (like is not None),
+                    (isin is not None),
+                    (isnotin is not None),
+                ]
             )
 
-            if conditions != 1:
+            flags = sum([(nullable is not None)])
+
+            if conditions + flags == 0:
                 raise HTTPException(
                     status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                    detail="if filter_by defined exactly one condition is required",
+                    detail="at least one condition of flag need to be set",
+                )
+
+            if conditions > 1:
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail="if filter_by defined exactly one condition/flag is required",
+                )
+
+            if flags > 1:
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail="only one flag can be set to true",
                 )
 
             filter_by = columns[filter_by]
 
-            criteria = ()
+            criteria = None
             if min and max:
                 criteria = and_(min <= filter_by, filter_by <= max)
             elif max:
@@ -181,10 +205,25 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 criteria = filter_by >= min
             elif eq:
                 criteria = filter_by == eq
+            elif neq:
+                criteria = filter_by != neq
             elif like:
                 criteria = filter_by.ilike(f"%{like}%")
             elif isin:
                 criteria = filter_by.in_(isin)
+            elif isnotin:
+                criteria = filter_by.not_in(isnotin)
+
+            if nullable is True:
+                if criteria is not None:
+                    criteria = or_(criteria, filter_by.is_(None))
+                else:
+                    criteria = filter_by.is_(None)
+            elif nullable is False:
+                if criteria is not None:
+                    criteria = and_(criteria, filter_by.is_not(None))
+                else:
+                    criteria = filter_by.is_not(None)
 
             if clause == "having":
                 query = query.having(criteria)

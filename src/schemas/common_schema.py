@@ -27,9 +27,14 @@ class FilterQuery(BaseModel):
     min: Union[float, datetime, str, None] = Query(None)
     max: Union[float, datetime, str, None] = Query(None)
     eq: Union[float, datetime, bool, str, None] = Query(None)
+    neq: Union[float, datetime, bool, str, None] = Query(None)
+    nullable: Optional[bool] = Query(
+        None, description="if true force include null values, if false force exclude null values"
+    )
     like: str = Query(None)
     # Fix for https://github.com/tiangolo/fastapi/issues/4445
-    isin: Optional[List[Union[float, datetime, bool, str, None]]] = Field(Query(None))
+    isin: Optional[List[Union[float, datetime, bool, str]]] = Field(Query(None))
+    isnotin: Optional[List[Union[float, datetime, bool, str]]] = Field(Query(None))
     order_by: Optional[str] = Query(None)
     order: Optional[IOrderEnum] = Query(IOrderEnum.ascendent)
 
