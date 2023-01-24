@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.6] - 2023-24-01
 
 - add isin operation for filter query
+- better error response for programingErrors
 
 ## [1.2.5] - 2023-23-01
 

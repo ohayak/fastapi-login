@@ -79,7 +79,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session = db_session or db.session
         if query is None:
             query = select(self.model)
-        return await paginate(db_session, query, params)
+        try:
+            logging.debug(f"Paginate query: {query}")
+            return await paginate(db_session, query, params)
+        except exc.ProgrammingError as e:
+            logging.error(e)
+            raise HTTPException(
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                detail=str(e.orig).splitlines()[0],
+            )
 
     async def get_multi_paginated_ordered(
         self,
@@ -114,8 +122,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             else:
                 query = query.order_by(order_by.desc())
 
-        logging.debug(f"Paginate query: {query}")
-        return await paginate(db_session, query, params)
+        try:
+            logging.debug(f"Paginate query: {query}")
+            return await paginate(db_session, query, params)
+        except exc.ProgrammingError as e:
+            logging.error(e)
+            raise HTTPException(
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                detail=str(e.orig).splitlines()[0],
+            )
 
     def _select_from_filter(
         self,
@@ -216,8 +231,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         query = self._select_from_filter(columns, filters, selectexp)
 
-        logging.debug(f"Paginate query: {query}")
-        return await paginate(db_session, query, params)
+        try:
+            logging.debug(f"Paginate query: {query}")
+            return await paginate(db_session, query, params)
+        except exc.ProgrammingError as e:
+            logging.error(e)
+            raise HTTPException(
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                detail=str(e.orig).splitlines()[0],
+            )
 
     async def get_multi_grouped_paginated(
         self,
@@ -329,8 +351,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         query = self._select_from_filter(filter_cols, filters, query, clause="having")
 
-        logging.debug(f"Paginate query: {query}")
-        return await paginate(db_session, query, params)
+        try:
+            logging.debug(f"Paginate query: {query}")
+            return await paginate(db_session, query, params)
+        except exc.ProgrammingError as e:
+            logging.error(e)
+            raise HTTPException(
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                detail=str(e.orig).splitlines()[0],
+            )
 
     async def get_multi_ordered(
         self,
