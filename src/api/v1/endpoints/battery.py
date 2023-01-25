@@ -109,7 +109,7 @@ async def get_infos_filtred(
     """
     Gets a paginated list of infos
     """
-    infos = await crud.batinfo.get_multi_filtered_paginated_ordered(
+    infos = await crud.batinfo.get_multi_filtered_paginated(
         filters=query,
         params=params,
         db_session=db,
@@ -148,7 +148,7 @@ async def get_evolution_filtered(
     """
     Gets a filtred paginated list of evolutions
     """
-    evolution = await crud.batevolution.get_multi_filtered_paginated_ordered(
+    evolution = await crud.batevolution.get_multi_filtered_paginated(
         filters=query,
         params=params,
         db_session=db,
@@ -170,7 +170,7 @@ async def get_review_filtered(
     """
     Gets a filtred paginated list of reviews
     """
-    review = await crud.batreview.get_multi_filtered_paginated_ordered(
+    review = await crud.batreview.get_multi_filtered_paginated(
         filters=query,
         params=params,
         db_session=db,
@@ -192,7 +192,7 @@ async def get_state_filtered(
     """
     Gets a filtred paginated list of states
     """
-    state = await crud.batstate.get_multi_filtered_paginated_ordered(
+    state = await crud.batstate.get_multi_filtered_paginated(
         filters=query,
         params=params,
         db_session=db,
@@ -244,7 +244,7 @@ async def post_evolution_agg(
         params=params,
         db_session=db,
     )
-    return create_response(data=evolution, meta={"quey": body})
+    return create_response(data=evolution, meta={"quey": query, "body": body})
 
 
 @router.post(
@@ -269,7 +269,7 @@ async def post_review_agg(
         params=params,
         db_session=db,
     )
-    return create_response(data=review, meta={"quey": body})
+    return create_response(data=review, meta={"quey": query, "body": body})
 
 
 @router.post(
@@ -294,4 +294,4 @@ async def post_state_agg(
         params=params,
         db_session=db,
     )
-    return create_response(data=state, meta={"quey": body})
+    return create_response(data=state, meta={"quey": query, "body": body})

@@ -247,7 +247,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         return query
 
-    async def get_multi_filtered_paginated_ordered(
+    async def get_multi_filtered_paginated(
         self,
         *,
         filters: FilterQuery = FilterQuery(),

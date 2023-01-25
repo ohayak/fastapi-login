@@ -42,6 +42,7 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=False,
         ),
         "role": "manager",
+        "company": "EXOTEC",
     },
     {
         "data": IUserCreate(
@@ -52,6 +53,7 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=False,
         ),
         "role": "operator",
+        "company": "EXOTEC",
     },
 ]
 
@@ -73,22 +75,24 @@ async def initdb(db_session: AsyncSession) -> None:
     for group in groups:
         current_group = await crud.group.get_group_by_name(name=group.name, db_session=db_session)
         if not current_group:
-            new_group = await crud.group.create(obj_in=group, db_session=db_session)
-            current_users = []
-            for user in users:
+            current_group = await crud.group.create(obj_in=group, db_session=db_session)
+        current_users = []
+        for user in users:
+            if user.get("group") == current_group.name:
                 current_users.append(await crud.user.get_by_email(email=user["data"].email, db_session=db_session))
-            await crud.group.add_users_to_group(users=current_users, group_id=new_group.id, db_session=db_session)
+        await crud.group.add_users_to_group(users=current_users, group_id=current_group.id, db_session=db_session)
 
     for company in companies:
         current_company = await crud.company.get_company_by_name(name=company.name, db_session=db_session)
         if not current_company:
-            new_company = await crud.company.create(obj_in=company, db_session=db_session)
-            current_users = []
-            for user in users:
+            current_company = await crud.company.create(obj_in=company, db_session=db_session)
+        current_users = []
+        for user in users:
+            if user.get("company") == current_company.name:
                 current_users.append(await crud.user.get_by_email(email=user["data"].email, db_session=db_session))
-            await crud.company.add_users_to_company(
-                users=current_users, company_id=new_company.id, db_session=db_session
-            )
+        await crud.company.add_users_to_company(
+            users=current_users, company_id=current_company.id, db_session=db_session
+        )
 
 
 async def main() -> None:

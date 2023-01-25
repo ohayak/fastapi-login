@@ -61,7 +61,7 @@ class CRUDBatteryState(CRUDBase[BatteryState, Dict[str, Any], Dict[str, Any]]):
             BatteryInfo, BatteryState.battery_ref == BatteryInfo.battery_ref, isouter=True
         )
 
-        return await self.get_multi_filtered_paginated_ordered(
+        return await self.get_multi_filtered_paginated(
             filters=filters,
             params=params,
             selectexp=selectexp,
