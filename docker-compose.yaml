@@ -32,6 +32,20 @@ services:
       - data:/var/lib/pgsql
     ports:
       - 54322:5432
+  worker:
+    image: rg.fr-par.scw.cloud/bib-batteries/bib-worker:1.1.3
+    container_name: worker
+    command: "alembic upgrade heads"
+    environment:
+    - DB_MIGRATE=true
+    - DB_DATA_HOST=dbdata
+    - DB_DATA_PORT=5432
+    - S3_KEY=key
+    - S3_SECRET=secert
+    - S3_BUCKET=bucket
+    depends_on:
+      dbdata:
+        condition: service_started
   api:
     build:
       context: .
@@ -40,7 +54,9 @@ services:
     - DB_MIGRATE=true
     - DB_INIT=true
     - DB_AUTH_HOST=dbauth
+    - DB_AUTH_PORT=5432
     - DB_DATA_HOST=dbdata
+    - DB_DATA_PORT=5432
     - REDIS_HOST=redis
     - LOG_LEVEL=INFO
     - ACCESSLOG=true
@@ -49,8 +65,13 @@ services:
     - FIRST_SUPERUSER_EMAIL=admin@bib.fr
     - FIRST_SUPERUSER_PASSWORD=password
     depends_on:
-      - redis
-      - dbdata
-      - dbauth
+      worker:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      dbdata:
+        condition: service_started
+      dbauth:
+        condition: service_started
     ports:
       - 8000:8000
