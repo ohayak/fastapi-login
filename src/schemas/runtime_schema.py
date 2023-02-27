@@ -1,4 +1,4 @@
-from models.dynamic_model import BatteryEvolution, BatteryInfo
+from models.runtime_model import BatteryEvolution, BatteryInfo
 from utils.make_model import Model, make_schema_from_orm
 
 IBatteryInfoRead: Model = make_schema_from_orm(BatteryInfo, model_name="IBatteryInfoRead")
