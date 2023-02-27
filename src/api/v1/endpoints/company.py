@@ -1,12 +1,13 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
-from fastapi_pagination import Params
 
 import crud
 from api import deps
+from exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 from models.company_model import Company
 from models.user_model import User
+from schemas.common_schema import PageQuery
 from schemas.company_schema import ICompanyCreate, ICompanyRead, ICompanyReadWithUsers, ICompanyUpdate
 from schemas.response_schema import (
     IDeleteResponseBase,
@@ -17,14 +18,13 @@ from schemas.response_schema import (
     create_response,
 )
 from schemas.role_schema import IRoleEnum
-from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 
 router = APIRouter()
 
 
 @router.get("", response_model=IGetResponsePaginated[ICompanyRead])
 async def get_companies(
-    params: Params = Depends(),
+    params: PageQuery = Depends(),
     current_user: User = Depends(deps.get_current_user()),
 ):
     """

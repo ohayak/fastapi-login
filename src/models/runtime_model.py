@@ -33,22 +33,6 @@ Base = declarative_base(cls=_Base)
 UUIDBase = declarative_base(cls=_UUIDBase)
 
 
-class BatteryStateEnum(str, Enum):
-    USE = "USE"
-    TO_REPAIR = "TO_REPAIR"
-    REPAIRING = "REPAIRING"
-    STORED = "STORED"
-    TRANSPORT = "TRANSPORT"
-
-
-class BatteryIncidentEnum(str, Enum):
-    BROKEN_CONNECTOR = "BROKEN_CONNECTOR"
-    NOT_CHARGING = "NOT_CHARGING"
-    BMS_ERROR = "BMS_ERROR"
-    WATER_DAMAGE = "WATER_DAMAGE"
-    DEAD_BATTERY = "DEAD_BATTERY"
-
-
 class BatteryStatusEnum(str, Enum):
     VERY_GOOD = "VERY_GOOD"
     GOOD = "GOOD"
@@ -56,37 +40,8 @@ class BatteryStatusEnum(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class BatteryCompany(UUIDBase):
-    ...
-
-
-class BatteryMedia(UUIDBase):
-    ...
-
-
-class BatteryCell(UUIDBase):
-    ...
-
-
-class BatteryModel(UUIDBase):
-    ...
-
-
 class BatteryInfo(Base):
     ...
-
-
-class CompanyData(Base):
-    ...
-
-
-class BatteryReview(UUIDBase):
-    ...
-
-
-class BatteryState(UUIDBase):
-    state = Column(saEnum(BatteryStateEnum))
-    incident = Column(saEnum(BatteryIncidentEnum))
 
 
 class BatteryEvolution(UUIDBase):

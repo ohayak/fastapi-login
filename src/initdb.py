@@ -2,11 +2,11 @@ import asyncio
 from typing import Dict, List, Union
 
 from sqlmodel import text
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel.ext.asyncio.session import AsyncSession, engine
 
 import crud
 from core.config import settings
-from db.session import SessionLocal
+from db.session import session_by_schema
 from schemas.company_schema import ICompanyCreate
 from schemas.group_schema import IGroupCreate
 from schemas.role_schema import IRoleCreate
@@ -14,13 +14,12 @@ from schemas.user_schema import IUserCreate
 
 roles: List[IRoleCreate] = [
     IRoleCreate(name="admin", description="Admin role"),
-    IRoleCreate(name="manager", description="Manager role"),
-    IRoleCreate(name="operator", description="Operator role"),
+    IRoleCreate(name="user", description="User role"),
 ]
 
-groups: List[IGroupCreate] = [IGroupCreate(name="GR1", description="This is the first group")]
+groups: List[IGroupCreate] = [IGroupCreate(name="administrators", description="This is the first group")]
 
-companies: List[ICompanyCreate] = [ICompanyCreate(name="EXOTEC")]
+companies: List[ICompanyCreate] = [ICompanyCreate(name="MyCompany")]
 
 users: List[Dict[str, Union[str, IUserCreate]]] = [
     {
@@ -32,28 +31,18 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=True,
         ),
         "role": "admin",
+        "group": "administrators",
     },
     {
         "data": IUserCreate(
-            first_name="Manager",
+            first_name="User",
             last_name="FastAPI",
-            password="manager",
-            email="manager@exotec.com",
+            password="user",
+            email="user@mycompany.com",
             is_superuser=False,
         ),
-        "role": "manager",
-        "company": "EXOTEC",
-    },
-    {
-        "data": IUserCreate(
-            first_name="Operator",
-            last_name="FastAPI",
-            password="operator",
-            email="operator@exotec.com",
-            is_superuser=False,
-        ),
-        "role": "operator",
-        "company": "EXOTEC",
+        "role": "user",
+        "company": "MyCompany",
     },
 ]
 
@@ -97,8 +86,7 @@ async def initdb(db_session: AsyncSession) -> None:
 
 async def main() -> None:
     print("Creating initial data")
-    async with SessionLocal() as session:
-        await session.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+    async with session_by_schema() as session:
         await initdb(session)
     print("Initial data created")
 

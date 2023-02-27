@@ -1,7 +1,7 @@
 import uuid
 from collections import ChainMap
 from inspect import isclass
-from typing import Any, Container, Optional, Type, TypeVar, Union
+from typing import Any, Container, List, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel, Field, create_model
 from sqlalchemy import inspect
@@ -9,6 +9,7 @@ from sqlalchemy.orm import ColumnProperty
 from sqlmodel import SQLModel
 
 Model = TypeVar("Model", bound=SQLModel)
+Schema = TypeVar("Schema", bound=BaseModel)
 
 
 def _from_pydantic(model: Model) -> dict[Any, tuple[Any, Any]]:
@@ -103,7 +104,7 @@ def _make_fields(
 
 def make_schema_from_orm(
     *db_models: Type,
-    model_name="",
+    model_name: str,
     include: tuple = (),
     exclude: Container[str] = (),
     exclude_all: Container[str] = (),
@@ -112,7 +113,7 @@ def make_schema_from_orm(
     """Convert SQLAlchemy model to Pydantic dataclass scheme.
 
     :param db_models: SQLAlchemy model class, not instance. Order matters, if duplicated fields keep most right element
-    :param model_name: New model name. Structure: '{db_model} your_name'
+    :param model_name: New model name.
     :param include: tuple of included elements, may be contain Pydantic
             model class or Dict[str: (type, field)]
     :param exclude: Exclude elements of tuple, by keys. Can't use this with
@@ -123,7 +124,6 @@ def make_schema_from_orm(
     :return: Pydantic dataclass model
     """
     fields = {}
-    final_model_name = model_name
     for db_model in db_models:
         fields = fields | _make_fields(
             db_model,
@@ -132,9 +132,8 @@ def make_schema_from_orm(
             exclude_all,
             required,
         )
-        final_model_name = f"{db_model.__name__} {final_model_name}"
     new_model = create_model(
-        final_model_name,
+        model_name,
         __base__=SQLModel,
         __validators__=SQLModel.__validators__,
         **fields,
@@ -155,3 +154,7 @@ def merge_schemas(
                 fields[key] = (Optional[value.type_], value.default)
 
     return create_model(schema_name, **fields)
+
+
+def map_models_schema(schema: Schema, models: List[Model]):
+    return list(map(lambda model: schema.from_orm(model), models))

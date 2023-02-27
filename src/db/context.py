@@ -1,5 +1,5 @@
 from contextvars import ContextVar
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import URL
@@ -8,6 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.types import ASGIApp
+
+from core.config import settings
 
 
 class MissingSessionError(Exception):
@@ -20,7 +22,7 @@ class MissingSessionError(Exception):
         a context manager e.g.:
 
         async with db():
-            await db.session.execute(foo.select()).fetchall()
+            await ctxdb.session.execute(foo.select()).fetchall()
         """
 
         super().__init__(msg)
@@ -42,38 +44,8 @@ _Session: Optional[sessionmaker] = None
 _session: ContextVar[Optional[AsyncSession]] = ContextVar("_session", default=None)
 
 
-class SQLAlchemyMiddleware(BaseHTTPMiddleware):
-    def __init__(
-        self,
-        app: ASGIApp,
-        db_url: Optional[Union[str, URL]] = None,
-        custom_engine: Optional[Engine] = None,
-        engine_args: Dict = None,
-        session_args: Dict = None,
-        commit_on_exit: bool = False,
-    ):
-        super().__init__(app)
-        self.commit_on_exit = commit_on_exit
-        engine_args = engine_args or {}
-        session_args = session_args or {}
-
-        if not custom_engine and not db_url:
-            raise ValueError("You need to pass a db_url or a custom_engine parameter.")
-        if not custom_engine:
-            engine = create_async_engine(db_url, **engine_args)
-        else:
-            engine = custom_engine
-
-        global _Session
-        _Session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False, **session_args)
-
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        async with db(commit_on_exit=self.commit_on_exit):
-            return await call_next(request)
-
-
 class DBSessionMeta(type):
-    # using this metaclass means that we can access db.session as a property at a class level,
+    # using this metaclass means that we can access ctxdb.session as a property at a class level,
     # rather than db().session
     @property
     def session(self) -> AsyncSession:
@@ -116,4 +88,37 @@ class DBSession(metaclass=DBSessionMeta):
         _session.reset(self.token)
 
 
-db: DBSessionMeta = DBSession
+class ContextDBMiddleware(BaseHTTPMiddleware):
+    def __init__(
+        self,
+        app: ASGIApp,
+        custom_engine: Optional[Engine] = None,
+        session_args: Dict = None,
+        connect_args: Dict = None,
+        commit_on_exit: bool = False,
+    ):
+        super().__init__(app)
+        self.commit_on_exit = commit_on_exit
+        session_args = session_args or {}
+        connect_args = connect_args or {}
+
+        if custom_engine:
+            engine = custom_engine
+        else:
+            engine = create_async_engine(
+                settings.ASYNC_DB_URI,
+                echo=settings.DB_ECHO,
+                pool_size=settings.POOL_SIZE,
+                max_overflow=settings.MAX_OVERFLOW,
+                connect_args=connect_args,
+            )
+
+        global _Session
+        _Session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False, **session_args)
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        async with DBSession(commit_on_exit=self.commit_on_exit):
+            return await call_next(request)
+
+
+ctxdb: DBSessionMeta = DBSession

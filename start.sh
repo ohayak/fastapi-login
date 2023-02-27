@@ -63,10 +63,9 @@ main() {
     [[ ! -z "$ROOT_PATH" ]] && chunks+=("--root-path" "$ROOT_PATH")
 
     chunks+=("$APP_MODULE")
-
+    cmd=''
     for e in "${chunks[@]}"
-    do
-        cmd=${cmd:+$cmd }$e
+      do cmd=${cmd:+$cmd }$e
     done
 
     if [[ "$DB_MIGRATE" == "true" || $migrate > 0 ]]; then

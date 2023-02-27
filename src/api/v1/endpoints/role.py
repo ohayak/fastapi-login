@@ -1,12 +1,13 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
-from fastapi_pagination import Params
 
 import crud
 from api import deps
+from exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 from models.role_model import Role
 from models.user_model import User
+from schemas.common_schema import PageQuery
 from schemas.response_schema import (
     IDeleteResponseBase,
     IGetResponseBase,
@@ -16,14 +17,13 @@ from schemas.response_schema import (
     create_response,
 )
 from schemas.role_schema import IRoleCreate, IRoleEnum, IRoleRead, IRoleUpdate
-from utils.exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
 
 router = APIRouter()
 
 
 @router.get("", response_model=IGetResponsePaginated[IRoleRead])
 async def get_roles(
-    params: Params = Depends(),
+    params: PageQuery = Depends(),
     current_user: User = Depends(deps.get_current_user()),
 ):
     """

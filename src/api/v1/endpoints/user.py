@@ -3,12 +3,13 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, File, Query, Response, UploadFile, status
-from fastapi_pagination import Params
 from sqlmodel import and_, select
 
 import crud
 from api import deps
+from exceptions import ContentNoChangeException, IdNotFoundException, NameNotFoundException, UserSelfDeleteException
 from models import Role, User
+from schemas.common_schema import PageQuery
 from schemas.media_schema import IMediaCreate
 from schemas.response_schema import (
     IDeleteResponseBase,
@@ -20,12 +21,6 @@ from schemas.response_schema import (
 )
 from schemas.role_schema import IRoleEnum
 from schemas.user_schema import IUserCreate, IUserRead, IUserReadWithoutGroups, IUserStatus
-from utils.exceptions import (
-    ContentNoChangeException,
-    IdNotFoundException,
-    NameNotFoundException,
-    UserSelfDeleteException,
-)
 from utils.minio_client import MinioClient
 from utils.resize_image import modify_image
 
@@ -34,7 +29,7 @@ router = APIRouter()
 
 @router.get("/list", response_model=IGetResponsePaginated[IUserReadWithoutGroups])
 async def read_users_list(
-    params: Params = Depends(),
+    params: PageQuery = Depends(),
     current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """
@@ -54,7 +49,7 @@ async def read_users_list_by_role_name(
         description="User status, It is optional. Default is active",
     ),
     role_name: str = Query(default="", description="String compare with name or last name"),
-    params: Params = Depends(),
+    params: PageQuery = Depends(),
     current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
@@ -79,7 +74,7 @@ async def read_users_list_by_role_name(
     response_model=IGetResponsePaginated[IUserReadWithoutGroups],
 )
 async def get_user_list_order_by_created_at(
-    params: Params = Depends(),
+    params: PageQuery = Depends(),
     current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
 ):
     """

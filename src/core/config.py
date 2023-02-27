@@ -6,65 +6,47 @@ from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
 class Settings(BaseSettings):
     API_VERSION: str = "v1"
     API_V1_STR: str = f"/{API_VERSION}"
-    PROJECT_NAME: str = "bib-monitor"
+    PROJECT_NAME: str = "fastapi-async-pg"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 1  # 1 hour
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 100  # 100 days
     WEB_CONCURRENCY = 9
     DB_POOL_SIZE = 83
     POOL_SIZE = max(DB_POOL_SIZE // WEB_CONCURRENCY, 5)
+    MAX_OVERFLOW = 64
 
-    DB_AUTH_USER: str = "auth"
-    DB_AUTH_PASSWORD: str = "auth"
-    DB_AUTH_HOST: str = "localhost"
-    DB_AUTH_PORT: Union[int, str] = 5432
-    DB_AUTH_NAME: str = "auth"
-    ASYNC_DB_AUTH_URI: Optional[str]
+    DB_USER: str = "data"
+    DB_PASSWORD: str = "data"
+    DB_HOST: str = "localhost"
+    DB_PORT: Union[int, str] = 5432
+    DB_NAME: str = "data"
+    DB_ECHO: bool = False
+    DB_URI: Optional[str]
+    ASYNC_DB_URI: Optional[str]
 
-    DB_DATA_USER: str = "data"
-    DB_DATA_PASSWORD: str = "data"
-    DB_DATA_HOST: str = "localhost"
-    DB_DATA_PORT: Union[int, str] = 5432
-    DB_DATA_NAME: str = "data"
-    ASYNC_DB_DATA_URI: Optional[str]
-    DB_DATA_URI: Optional[str]
-
-    @validator("ASYNC_DB_AUTH_URI", pre=True)
-    def assemble_async_db_auth_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
-        if isinstance(v, str):
-            return v
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            user=values.get("DB_AUTH_USER"),
-            password=values.get("DB_AUTH_PASSWORD"),
-            host=values.get("DB_AUTH_HOST"),
-            port=str(values.get("DB_AUTH_PORT")),
-            path=f"/{values.get('DB_AUTH_NAME') or ''}",
-        )
-
-    @validator("ASYNC_DB_DATA_URI", pre=True)
+    @validator("ASYNC_DB_URI", pre=True)
     def assemble_async_db_data_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
             scheme="postgresql+asyncpg",
-            user=values.get("DB_DATA_USER"),
-            password=values.get("DB_DATA_PASSWORD"),
-            host=values.get("DB_DATA_HOST"),
-            port=str(values.get("DB_DATA_PORT")),
-            path=f"/{values.get('DB_DATA_NAME') or ''}",
+            user=values.get("DB_USER"),
+            password=values.get("DB_PASSWORD"),
+            host=values.get("DB_HOST"),
+            port=str(values.get("DB_PORT")),
+            path=f"/{values.get('DB_NAME') or ''}",
         )
 
-    @validator("DB_DATA_URI", pre=True)
+    @validator("DB_URI", pre=True)
     def assemble_db_data_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
             scheme="postgresql+psycopg2",
-            user=values.get("DB_DATA_USER"),
-            password=values.get("DB_DATA_PASSWORD"),
-            host=values.get("DB_DATA_HOST"),
-            port=str(values.get("DB_DATA_PORT")),
-            path=f"/{values.get('DB_DATA_NAME') or ''}",
+            user=values.get("DB_USER"),
+            password=values.get("DB_PASSWORD"),
+            host=values.get("DB_HOST"),
+            port=str(values.get("DB_PORT")),
+            path=f"/{values.get('DB_NAME') or ''}",
         )
 
     FIRST_SUPERUSER_EMAIL: EmailStr

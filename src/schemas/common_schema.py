@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List, Optional, Union
 
 from fastapi import Body, Query
+from fastapi_pagination import Params
 from pydantic import BaseModel, Field
 
 from schemas.role_schema import IRoleRead
@@ -13,8 +14,8 @@ class IMetaGeneral(BaseModel):
 
 
 class IOrderEnum(str, Enum):
-    ascendent = "ascendent"
-    descendent = "descendent"
+    asc = "asc"
+    desc = "desc"
 
 
 class TokenType(str, Enum):
@@ -36,7 +37,7 @@ class FilterQuery(BaseModel):
     isin: Optional[List[Union[float, datetime, bool, str]]] = Field(Query(None))
     isnotin: Optional[List[Union[float, datetime, bool, str]]] = Field(Query(None))
     order_by: Optional[str] = Query(None)
-    order: Optional[IOrderEnum] = Query(IOrderEnum.ascendent)
+    order: Optional[IOrderEnum] = Query(IOrderEnum.asc)
 
 
 class GroupQuery(BaseModel):
@@ -47,3 +48,7 @@ class GroupQuery(BaseModel):
     max: List[str] = Body([], description="compute max for these columns")
     count: List[str] = Body([], description="compute count for these columns")
     array: List[str] = Body([], description="array aggregation for these columns")
+
+
+class PageQuery(Params):
+    ...
