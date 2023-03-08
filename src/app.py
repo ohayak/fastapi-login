@@ -50,16 +50,8 @@ async def root():
 
 @app.on_event("startup")
 async def on_startup():
-
-    try:
-        redis_client = await get_redis_client()
-        await redis_client.ping()
-    except Exception:
-        logging.error("Redis server not responding, using fake server")
-        redis_client = fakeredis.FakeStrictRedis()
-
+    redis_client = await get_redis_client()
     FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
-
     logging.info("startup fastapi")
 
 

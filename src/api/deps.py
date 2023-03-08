@@ -1,3 +1,4 @@
+import logging
 from typing import AsyncGenerator, List
 from uuid import UUID
 
@@ -16,7 +17,7 @@ from models.user_model import User
 from schemas.common_schema import IMetaGeneral, TokenType
 from schemas.user_schema import IUserCreate, IUserRead
 from utils.minio_client import MinioClient
-from utils.token import get_valid_tokens
+from utils.token import get_tokens
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
@@ -28,6 +29,15 @@ async def get_redis_client() -> Redis:
         encoding="utf8",
         decode_responses=True,
     )
+
+    try:
+        await redis.ping()
+    except Exception:
+        logging.error("Redis server not responding, using fake server")
+        import fakeredis
+
+        redis = fakeredis.FakeStrictRedis()
+
     return redis
 
 
@@ -53,17 +63,22 @@ def get_current_user(required_roles: List[str] = None) -> User:
     ) -> User:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
+        except jwt.JWTClaimsError as e:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Invalid access token: {str(e)}",
+            )
         except (jwt.JWTError, ValidationError):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Could not validate credentials",
+                detail="Could not validate access token",
             )
         user_id = payload["sub"]
-        valid_access_tokens = await get_valid_tokens(redis_client, user_id, TokenType.ACCESS)
-        if valid_access_tokens and token not in valid_access_tokens:
+        valid_access_tokens = await get_tokens(redis_client, user_id, TokenType.ACCESS)
+        if not valid_access_tokens or token not in valid_access_tokens:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Could not validate credentials",
+                detail="Unknown token",
             )
         user: User = await crud.user.get(id=user_id)
         if not user:
