@@ -6,7 +6,8 @@ from fastapi import Body, Query
 from fastapi_pagination import Params
 from pydantic import BaseModel, Field
 
-from schemas.role_schema import IRoleRead
+from .role_schema import IRoleRead
+from .user_schema import IUserRead
 
 
 class IMetaGeneral(BaseModel):
@@ -21,6 +22,18 @@ class IOrderEnum(str, Enum):
 class TokenType(str, Enum):
     ACCESS = "access_token"
     REFRESH = "refresh_token"
+
+
+class Token(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: TokenType
+    expires_in: int
+    user: IUserRead
+
+
+class RefreshToken(BaseModel):
+    refresh_token: str
 
 
 class FilterQuery(BaseModel):

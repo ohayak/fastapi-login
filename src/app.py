@@ -6,6 +6,7 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_pagination import add_pagination
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from api.deps import get_redis_client
 from api.v1 import api_router as api_router_v1
@@ -19,6 +20,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
+app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 app.add_middleware(ContextDBMiddleware)
 
 # Set all CORS origins enabled

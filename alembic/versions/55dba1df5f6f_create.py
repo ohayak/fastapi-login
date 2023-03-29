@@ -77,7 +77,6 @@ def upgrade() -> None:
     op.create_index(op.f("ix_Role_id"), "Role", ["id"], unique=False)
     op.create_table(
         "User",
-        sa.Column("fleet", sa.ARRAY(sa.VARCHAR()), nullable=True),
         sa.Column("first_name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("last_name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("email", sqlmodel.sql.sqltypes.AutoString(), nullable=True),

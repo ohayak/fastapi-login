@@ -1,6 +1,7 @@
 from datetime import timedelta
-from typing import Any
+from typing import Any, Dict, Literal
 
+from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from jose import jwt
@@ -8,18 +9,26 @@ from pydantic import EmailStr, ValidationError
 from redis.asyncio import Redis
 
 import crud
-from api import deps
-from api.deps import get_redis_client
+from api.deps import get_current_user, get_general_meta, get_redis_client
 from core import security
 from core.config import settings
 from core.security import get_password_hash, verify_password
 from models.user_model import User
-from schemas.common_schema import IMetaGeneral, TokenType
-from schemas.response_schema import IPostResponseBase, create_response
-from schemas.token_schema import RefreshToken, Token, TokenRead
-from utils.token import add_token, delete_tokens, get_tokens
+from schemas.common_schema import IMetaGeneral, RefreshToken, Token, TokenType
+from utils.token import delete_tokens, get_tokens, set_token
 
 router = APIRouter()
+
+oauth = OAuth()
+
+for idp in ["GOOGLE", "FACEBOOK", "MICROSOFT"]:
+    oauth.register(
+        name=idp.lower(),
+        client_id=settings[f"{idp}_CLIENT_ID"],
+        client_secret=settings[f"{idp}_CLIENT_SECRET"],
+        server_metadata_url=settings[f"{idp}_CONF_URL"],
+        client_kwargs={"scope": "openid email profile"},
+    )
 
 
 class OAuth2PasswordRequestForm:
@@ -27,7 +36,7 @@ class OAuth2PasswordRequestForm:
 
     def __init__(
         self,
-        grant_type: str = Form(..., regex="password|refresh_token"),
+        grant_type: str = Form(regex="password|refresh_token"),
         username: str = Form(default=""),
         password: str = Form(default=""),
         refresh_token: str = Form(default=""),
@@ -38,28 +47,31 @@ class OAuth2PasswordRequestForm:
         self.refresh_token = refresh_token
 
 
-async def _access_token(
-    email: str,
-    password: str,
-    redis_client: Redis,
-) -> Token:
+async def _authenticate(email: EmailStr, password: str) -> User:
     user = await crud.user.authenticate(email=email, password=password)
     if not user:
         raise HTTPException(status_code=400, detail="Email or Password incorrect")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="User is inactive")
+    return user
+
+
+async def _access_token(
+    user: User,
+    redis_client: Redis,
+) -> Token:
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(user.id, expires_delta=access_token_expires)
     refresh_token = security.create_refresh_token(user.id, expires_delta=refresh_token_expires)
-    await add_token(
+    await set_token(
         redis_client,
         user.id,
         access_token,
         TokenType.ACCESS,
         settings.ACCESS_TOKEN_EXPIRE_MINUTES,
     )
-    await add_token(
+    await set_token(
         redis_client,
         user.id,
         refresh_token,
@@ -104,7 +116,7 @@ async def _refresh_token(
         user = await crud.user.get(id=user_id)
         if user.is_active:
             access_token = security.create_access_token(user_id, expires_delta=access_token_expires)
-            await add_token(
+            await set_token(
                 redis_client,
                 user.id,
                 access_token,
@@ -133,7 +145,8 @@ async def token(
     OAuth2 compatible token login, get an access token for future requests
     """
     if form_data.grant_type == "password":
-        data = await _access_token(form_data.username, form_data.password, redis_client)
+        user = await _authenticate(form_data.username, form_data.password)
+        data = await _access_token(user, redis_client)
     elif form_data.grant_type == "refresh_token":
         data = await _refresh_token(form_data.refresh_token, redis_client)
     else:
@@ -145,20 +158,21 @@ async def token(
 async def login(
     email: EmailStr = Body(...),
     password: str = Body(...),
-    meta_data: IMetaGeneral = Depends(deps.get_general_meta),
+    meta_data: IMetaGeneral = Depends(get_general_meta),
     redis_client: Redis = Depends(get_redis_client),
 ) -> Any:
     """
     Login for all users
     """
-    data = await _access_token(email, password, redis_client)
+    user = await _authenticate(email, password)
+    data = await _access_token(user, redis_client)
     return data
 
 
 @router.post("/signout")
 async def logout(
     redirect_url: str = Query("/"),
-    current_user: User = Depends(deps.get_current_user()),
+    current_user: User = Depends(get_current_user()),
     redis_client: Redis = Depends(get_redis_client),
 ):
     await delete_tokens(redis_client, current_user.id, TokenType.ACCESS)
@@ -172,7 +186,7 @@ async def logout(
 async def change_password(
     current_password: str = Body(...),
     new_password: str = Body(...),
-    current_user: User = Depends(deps.get_current_user()),
+    current_user: User = Depends(get_current_user()),
     redis_client: Redis = Depends(get_redis_client),
 ) -> Any:
     """
@@ -198,14 +212,14 @@ async def change_password(
 
     await delete_tokens(redis_client, current_user.id, TokenType.ACCESS)
     await delete_tokens(redis_client, current_user.id, TokenType.REFRESH)
-    await add_token(
+    await set_token(
         redis_client,
         current_user.id,
         access_token,
         TokenType.ACCESS,
         settings.ACCESS_TOKEN_EXPIRE_MINUTES,
     )
-    await add_token(
+    await set_token(
         redis_client,
         current_user.id,
         refresh_token,
@@ -233,4 +247,29 @@ async def refresh_token(
     Gets a new access token using the refresh token for future requests
     """
     data = await _refresh_token(body.refresh_token, redis_client)
+    return data
+
+
+@router.get("/{idp}")
+async def login_via_idp(idp: Literal["google", "facebook", "microsoft"], request: Request):
+    redirect_uri = request.url_for("auth_via_idp", idp=idp)
+    return await oauth[idp].authorize_redirect(request, redirect_uri)
+
+
+@router.get("/{idp}/auth", include_in_schema=False)
+async def auth_via_idp(idp: str, request: Request, redis_client: Redis = Depends(get_redis_client)):
+    try:
+        token = await oauth[idp].authorize_access_token(request)
+    except OAuthError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=error.error,
+        )
+
+    userinfo: Dict = token["userinfo"]
+    userobj = User(first_name=userinfo["given_name"], last_name=userinfo["family_name"], email=userinfo.get("email"))
+    user = await crud.user.get_by_email(userobj.email)
+    if not user:
+        user = await crud.user.create(obj_in=userobj)
+    data = await _access_token(user, redis_client)
     return data

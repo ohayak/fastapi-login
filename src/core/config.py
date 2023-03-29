@@ -64,6 +64,18 @@ class Settings(BaseSettings):
     ENCRYPT_KEY: str = "q+Y0dzUKGhfDDpAYouIUqLsY/NBIQJ2NMKFWeqjxsk8="
     BACKEND_CORS_ORIGINS: Union[List[str], List[AnyHttpUrl]] = ["*"]
 
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_CONF_URL: str = "https://accounts.google.com/.well-known/openid-configuration"
+
+    FACEBOOK_CLIENT_ID: str = ""
+    FACEBOOK_CLIENT_SECRET: str = ""
+    FACEBOOK_CONF_URL: str = "https://www.facebook.com/.well-known/openid-configuration/"
+
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_CONF_URL: str = "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration"
+
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):

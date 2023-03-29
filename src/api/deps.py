@@ -19,8 +19,6 @@ from schemas.user_schema import IUserCreate, IUserRead
 from utils.minio_client import MinioClient
 from utils.token import get_tokens
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
-
 
 async def get_redis_client() -> Redis:
     redis = from_url(
@@ -54,6 +52,9 @@ async def get_db_by_schema(schema: str = None) -> AsyncGenerator[AsyncSession, N
 async def get_general_meta() -> IMetaGeneral:
     current_roles = await crud.role.get_multi(skip=0, limit=100)
     return IMetaGeneral(roles=current_roles)
+
+
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
 
 def get_current_user(required_roles: List[str] = None) -> User:

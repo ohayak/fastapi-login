@@ -18,6 +18,7 @@ dependencies:
   - redis-py=4.4.2
   - minio=7.1.13
   - pillow=9.4.0
+  - authlib=1.2.0
   - pip:
     - sqlmodel==0.0.8
     - uuid6==2022.10.25
