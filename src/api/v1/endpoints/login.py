@@ -24,9 +24,9 @@ oauth = OAuth()
 for idp in ["GOOGLE", "FACEBOOK", "MICROSOFT"]:
     oauth.register(
         name=idp.lower(),
-        client_id=settings[f"{idp}_CLIENT_ID"],
-        client_secret=settings[f"{idp}_CLIENT_SECRET"],
-        server_metadata_url=settings[f"{idp}_CONF_URL"],
+        client_id=getattr(settings, f"{idp}_CLIENT_ID"),
+        client_secret=getattr(settings, f"{idp}_CLIENT_SECRET"),
+        server_metadata_url=getattr(settings, f"{idp}_CONF_URL"),
         client_kwargs={"scope": "openid email profile"},
     )
 
@@ -79,7 +79,6 @@ async def _access_token(
         settings.REFRESH_TOKEN_EXPIRE_MINUTES,
     )
     data = Token(
-        token_type="Bearer",
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
@@ -124,7 +123,6 @@ async def _refresh_token(
                 settings.ACCESS_TOKEN_EXPIRE_MINUTES,
             )
             return Token(
-                token_type="Bearer",
                 access_token=access_token,
                 refresh_token=refresh_token,
                 expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
@@ -228,7 +226,6 @@ async def change_password(
     )
 
     data = Token(
-        token_type="Bearer",
         access_token=access_token,
         refresh_token=refresh_token,
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
@@ -271,5 +268,6 @@ async def auth_via_idp(idp: str, request: Request, redis_client: Redis = Depends
     user = await crud.user.get_by_email(userobj.email)
     if not user:
         user = await crud.user.create(obj_in=userobj)
+    user = await crud.user.add_social_login(user, idp)
     data = await _access_token(user, redis_client)
     return data

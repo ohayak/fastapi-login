@@ -22,23 +22,6 @@ def upgrade() -> None:
     op.execute(sa.text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
     op.execute(sa.text("CREATE CAST (varchar AS uuid) WITH INOUT AS IMPLICIT"))
     op.create_table(
-        "Company",
-        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("description", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("address", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("status", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("repair_partner", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=True),
-        sa.Column("created_by_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
-        sa.Column("contact_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
-        # sa.ForeignKeyConstraint(['contact_id'], ['User.id'], ),
-        # sa.ForeignKeyConstraint(['created_by_id'], ['User.id'], ),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index(op.f("ix_Company_id"), "Company", ["id"], unique=False)
-    op.create_table(
         "Media",
         sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("description", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
@@ -85,16 +68,11 @@ def upgrade() -> None:
         sa.Column("role_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
         sa.Column("phone", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("image_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
-        sa.Column("job", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("company_id", sqlmodel.sql.sqltypes.GUID(), nullable=True),
         sa.Column("id", sqlmodel.sql.sqltypes.GUID(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
-        sa.Column("hashed_password", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["company_id"],
-            ["Company.id"],
-        ),
+        sa.Column("hashed_password", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("social_logins", sa.ARRAY(sa.VARCHAR()), nullable=True),
         sa.ForeignKeyConstraint(
             ["image_id"],
             ["ImageMedia.id"],
@@ -105,10 +83,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_foreign_key("fk_Company_contact_id_User_id", "Company", "User", ["contact_id"], ["id"])
-    op.create_foreign_key("fk_Company_created_by_id_User_id", "Company", "User", ["created_by_id"], ["id"])
     op.create_index(op.f("ix_User_email"), "User", ["email"], unique=True)
-    op.create_index(op.f("ix_User_hashed_password"), "User", ["hashed_password"], unique=False)
     op.create_index(op.f("ix_User_id"), "User", ["id"], unique=False)
     op.create_table(
         "Group",
@@ -162,8 +137,6 @@ def downgrade() -> None:
     op.drop_table("Role")
     op.drop_index(op.f("ix_Media_id"), table_name="Media")
     op.drop_table("Media")
-    op.drop_index(op.f("ix_Company_id"), table_name="Company")
-    op.drop_table("Company")
     op.execute(sa.text("DROP CAST IF EXISTS (varchar AS uuid)"))
     op.execute(sa.text("DROP EXTENSION IF EXISTS pg_trgm"))
     # ### end Alembic commands ###

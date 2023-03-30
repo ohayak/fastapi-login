@@ -19,6 +19,7 @@ dependencies:
   - minio=7.1.13
   - pillow=9.4.0
   - authlib=1.2.0
+  - itsdangerous=2.1.2
   - pip:
     - sqlmodel==0.0.8
     - uuid6==2022.10.25

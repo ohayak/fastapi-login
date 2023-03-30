@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Literal, Optional, Union
 
 from fastapi import Body, Query
 from fastapi_pagination import Params
@@ -27,7 +27,7 @@ class TokenType(str, Enum):
 class Token(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: TokenType
+    token_type: Literal["Bearer"] = "Bearer"
     expires_in: int
     user: IUserRead
 

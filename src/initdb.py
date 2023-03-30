@@ -7,7 +7,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession, engine
 import crud
 from core.config import settings
 from db.session import session_by_schema
-from schemas.company_schema import ICompanyCreate
 from schemas.group_schema import IGroupCreate
 from schemas.role_schema import IRoleCreate
 from schemas.user_schema import IUserCreate
@@ -19,7 +18,6 @@ roles: List[IRoleCreate] = [
 
 groups: List[IGroupCreate] = [IGroupCreate(name="administrators", description="This is the first group")]
 
-companies: List[ICompanyCreate] = [ICompanyCreate(name="MyCompany")]
 
 users: List[Dict[str, Union[str, IUserCreate]]] = [
     {
@@ -42,7 +40,6 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=False,
         ),
         "role": "user",
-        "company": "MyCompany",
     },
 ]
 
@@ -70,18 +67,6 @@ async def initdb(db_session: AsyncSession) -> None:
             if user.get("group") == current_group.name:
                 current_users.append(await crud.user.get_by_email(email=user["data"].email, db_session=db_session))
         await crud.group.add_users_to_group(users=current_users, group_id=current_group.id, db_session=db_session)
-
-    for company in companies:
-        current_company = await crud.company.get_company_by_name(name=company.name, db_session=db_session)
-        if not current_company:
-            current_company = await crud.company.create(obj_in=company, db_session=db_session)
-        current_users = []
-        for user in users:
-            if user.get("company") == current_company.name:
-                current_users.append(await crud.user.get_by_email(email=user["data"].email, db_session=db_session))
-        await crud.company.add_users_to_company(
-            users=current_users, company_id=current_company.id, db_session=db_session
-        )
 
 
 async def main() -> None:

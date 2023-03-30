@@ -24,7 +24,8 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
     async def create_with_role(self, *, obj_in: IUserCreate, db_session: Optional[AsyncSession] = None) -> User:
         db_session = db_session or ctxdb.session
         db_obj = User.from_orm(obj_in)
-        db_obj.hashed_password = get_password_hash(obj_in.password)
+        if obj_in.password:
+            db_obj.hashed_password = get_password_hash(obj_in.password)
         db_session.add(db_obj)
         await db_session.commit()
         await db_session.refresh(db_obj)
@@ -43,6 +44,19 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
             await db_session.refresh(x)
             response.append(x)
         return response
+
+    async def add_social_login(
+        self, *, user: User, social_login: str, db_session: Optional[AsyncSession] = None
+    ) -> User:
+        db_session = db_session or ctxdb.session
+        if social_login not in user.social_logins:
+            social_logins = [social_login] if not user.social_logins else set(user.social_logins + [social_login])
+            setattr(user, "social_logins", social_logins)
+            setattr(user, "updated_at", datetime.utcnow())
+            db_session.add(user)
+            await db_session.commit()
+            await db_session.refresh(user)
+        return user
 
     async def authenticate(self, *, email: EmailStr, password: str) -> Optional[User]:
         user = await self.get_by_email(email=email)
