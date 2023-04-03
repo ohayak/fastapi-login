@@ -10,7 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from api.v1 import api_router as api_router_v1
 from core.config import settings
 from middlewares.asql import ContextDatabaseMiddleware
-from middlewares.redis import ContextRedisMiddleware, get_ctx_client
+from middlewares.redis import ContextRedisMiddleware, get_ctx_session
 
 # Core Application Instance
 app = FastAPI(
@@ -53,7 +53,7 @@ async def root():
 
 @app.on_event("startup")
 async def on_startup():
-    redis_client = get_ctx_client()
+    redis_client = get_ctx_session()
     try:
         await redis_client.ping()
     except Exception:

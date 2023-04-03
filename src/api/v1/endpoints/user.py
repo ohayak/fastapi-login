@@ -9,7 +9,7 @@ from sqlmodel import and_, select
 import crud
 from api.deps import get_current_user, is_valid_user, user_exists
 from exceptions import ContentNoChangeException, IdNotFoundException, NameNotFoundException, UserSelfDeleteException
-from middlewares.minio import Minio, get_ctx_client
+from middlewares import Minio, get_ctx_minio
 from models import Role, User
 from schemas.common_schema import FilterQuery
 from schemas.media_schema import IMediaCreate
@@ -96,7 +96,7 @@ async def upload_my_image(
     description: Optional[str] = Body(None),
     image_file: UploadFile = File(...),
     current_user: User = Depends(get_current_user()),
-    minio_client: Minio = Depends(get_ctx_client),
+    minio_client: Minio = Depends(get_ctx_minio),
 ):
     """
     Uploads a user image
@@ -128,7 +128,7 @@ async def upload_user_image(
     description: Optional[str] = Body(None),
     image_file: UploadFile = File(...),
     current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
-    minio_client: Minio = Depends(get_ctx_client),
+    minio_client: Minio = Depends(get_ctx_minio),
 ):
     """
     Uploads a user image by his/her id

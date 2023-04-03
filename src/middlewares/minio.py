@@ -18,7 +18,7 @@ class MissingBucketError(Exception):
         a context manager e.g.:
 
         async with db():
-            await get_ctx_session().execute(foo.select()).fetchall()
+            await get_ctx_sql().execute(foo.select()).fetchall()
         """
 
         super().__init__(msg)
@@ -40,7 +40,7 @@ _bucket: Optional[str] = None
 _client: ContextVar[Optional[Minio]] = ContextVar("_client", default=None)
 
 
-def get_ctx_client() -> Minio:
+def get_ctx_session() -> Minio:
     """Return an instance of Session local to the current async context."""
     if _bucket is None:
         raise MissingBucketError

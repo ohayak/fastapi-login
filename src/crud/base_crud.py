@@ -14,7 +14,7 @@ from sqlmodel import ARRAY, SQLModel, Unicode, and_, func, literal, or_, select,
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
-from middlewares.asql import get_ctx_session
+from middlewares import get_ctx_sql
 from schemas.common_schema import FilterQuery, GroupQuery, IOrderEnum
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
@@ -35,7 +35,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     async def get(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> Optional[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         query = select(self.model).where(self.model.id == id)
         response = await db_session.execute(query)
         return response.scalar_one_or_none()
@@ -46,19 +46,19 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         list_ids: List[Union[UUID, str]],
         db_session: Optional[AsyncSession] = None,
     ) -> Optional[List[ModelType]]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         response = await db_session.execute(select(self.model).where(self.model.id.in_(list_ids)))
         return response.scalars().all()
 
     async def get_count(self, db_session: Optional[AsyncSession] = None) -> Optional[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         response = await db_session.execute(select(func.count()).select_from(select(self.model).subquery()))
         return response.scalar_one()
 
     async def get_one(
         self, *, query: Optional[Union[T, Select[T]]] = None, db_session: Optional[AsyncSession] = None
     ) -> Optional[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         if query is None:
             query = select(self.model).order_by(self.model.id)
         response = await db_session.execute(query)
@@ -72,7 +72,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         limit: int = 100,
         db_session: Optional[AsyncSession] = None,
     ) -> List[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         if query is None:
             query = select(self.model).offset(offset).limit(limit).order_by(self.model.id)
         response = await db_session.execute(query)
@@ -85,7 +85,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         params: Params = Params(),
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         if query is None:
             query = select(self.model)
         try:
@@ -107,7 +107,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
 
         columns = self.model.__table__.columns
 
@@ -265,7 +265,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
 
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         columns = self.model.__table__.columns
 
         if filters.filter_by is None:
@@ -297,7 +297,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         params: Params = Params(),
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
 
         columns = self.model.__table__.columns
 
@@ -418,7 +418,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         limit: int = 100,
         db_session: Optional[AsyncSession] = None,
     ) -> List[ModelType]:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
 
         columns = self.model.__table__.columns
 
@@ -450,7 +450,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         created_by_id: Optional[Union[UUID, str]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> ModelType:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         db_obj = self.model.from_orm(obj_in)  # type: ignore
         db_obj.created_at = datetime.utcnow()
         db_obj.updated_at = datetime.utcnow()
@@ -476,7 +476,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_new: Union[UpdateSchemaType, Dict[str, Any], ModelType],
         db_session: Optional[AsyncSession] = None,
     ) -> ModelType:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         obj_data = jsonable_encoder(obj_current)
 
         if isinstance(obj_new, dict):
@@ -497,7 +497,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return obj_current
 
     async def delete(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> ModelType:
-        db_session = db_session or get_ctx_session()
+        db_session = db_session or get_ctx_sql()
         response = await db_session.execute(select(self.model).where(self.model.id == id))
         obj = response.scalar_one()
         await db_session.delete(obj)

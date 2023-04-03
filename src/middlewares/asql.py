@@ -19,7 +19,7 @@ class MissingSessionError(Exception):
         a context manager e.g.:
 
         async with db():
-            await get_ctx_session().execute(foo.select()).fetchall()
+            await get_ctx_sql().execute(foo.select()).fetchall()
         """
 
         super().__init__(msg)

@@ -6,14 +6,13 @@ from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, Reques
 from fastapi.responses import RedirectResponse
 from jose import jwt
 from pydantic import EmailStr, ValidationError
-from redis.asyncio import Redis
 
 import crud
 from api.deps import get_current_user, get_general_meta
 from core import security
 from core.config import settings
 from core.security import get_password_hash, verify_password
-from middlewares.redis import get_ctx_client
+from middlewares import Redis, get_ctx_redis
 from models.user_model import User
 from schemas.common_schema import IMetaGeneral, RefreshToken, Token, TokenType
 from utils.token import delete_tokens, get_tokens, set_token
@@ -138,7 +137,7 @@ async def _refresh_token(
 @router.post("/token", response_model=Token)
 async def token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    redis_client: Redis = Depends(get_ctx_client),
+    redis_client: Redis = Depends(get_ctx_redis),
 ) -> Any:
     """
     OAuth2 compatible token login, get an access token for future requests
@@ -158,7 +157,7 @@ async def login(
     email: EmailStr = Body(...),
     password: str = Body(...),
     meta_data: IMetaGeneral = Depends(get_general_meta),
-    redis_client: Redis = Depends(get_ctx_client),
+    redis_client: Redis = Depends(get_ctx_redis),
 ) -> Any:
     """
     Login for all users
@@ -172,7 +171,7 @@ async def login(
 async def logout(
     redirect_url: str = Query("/"),
     current_user: User = Depends(get_current_user()),
-    redis_client: Redis = Depends(get_ctx_client),
+    redis_client: Redis = Depends(get_ctx_redis),
 ):
     await delete_tokens(redis_client, current_user.id, TokenType.ACCESS)
     await delete_tokens(redis_client, current_user.id, TokenType.REFRESH)
@@ -186,7 +185,7 @@ async def change_password(
     current_password: str = Body(...),
     new_password: str = Body(...),
     current_user: User = Depends(get_current_user()),
-    redis_client: Redis = Depends(get_ctx_client),
+    redis_client: Redis = Depends(get_ctx_redis),
 ) -> Any:
     """
     Change password
@@ -239,7 +238,7 @@ async def change_password(
 @router.post("/refresh-token", response_model=Token, status_code=201)
 async def refresh_token(
     body: RefreshToken = Body(...),
-    redis_client: Redis = Depends(get_ctx_client),
+    redis_client: Redis = Depends(get_ctx_redis),
 ) -> Any:
     """
     Gets a new access token using the refresh token for future requests
@@ -255,7 +254,7 @@ async def login_via_idp(idp: Literal["google", "facebook", "microsoft"], request
 
 
 @router.get("/{idp}/auth", include_in_schema=False)
-async def auth_via_idp(idp: str, request: Request, redis_client: Redis = Depends(get_ctx_client)):
+async def auth_via_idp(idp: str, request: Request, redis_client: Redis = Depends(get_ctx_redis)):
     try:
         token = await oauth[idp].authorize_access_token(request)
     except OAuthError as error:

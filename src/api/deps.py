@@ -10,11 +10,9 @@ from redis.asyncio import Redis, from_url
 import crud
 from core import security
 from core.config import settings
-from middlewares.redis import get_ctx_client
-from models.playlist_model import Playlist
+from middlewares import get_ctx_redis
 from models.user_model import User
 from schemas.common_schema import IMetaGeneral, TokenType
-from schemas.stream_schema import IStreamCreate
 from schemas.user_schema import IUserCreate, IUserRead
 from utils.token import get_tokens
 
@@ -30,7 +28,7 @@ reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/ac
 def get_current_user(required_roles: List[str] = None) -> User:
     async def current_user(
         token: str = Depends(reusable_oauth2),
-        redis_client: Redis = Depends(get_ctx_client),
+        redis_client: Redis = Depends(get_ctx_redis),
     ) -> User:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
