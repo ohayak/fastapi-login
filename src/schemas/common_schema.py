@@ -3,7 +3,6 @@ from enum import Enum
 from typing import List, Literal, Optional, Union
 
 from fastapi import Body, Query
-from fastapi_pagination import Params
 from pydantic import BaseModel, Field
 
 from .role_schema import IRoleRead
@@ -61,7 +60,3 @@ class GroupQuery(BaseModel):
     max: List[str] = Body([], description="compute max for these columns")
     count: List[str] = Body([], description="compute count for these columns")
     array: List[str] = Body([], description="array aggregation for these columns")
-
-
-class PageQuery(Params):
-    ...

@@ -13,4 +13,4 @@ COPY . /app/
 WORKDIR /app
 RUN conda env update -n base -f conda-env.yaml
 
-CMD ["./start.sh"]
+CMD ["bash", "start.sh"]

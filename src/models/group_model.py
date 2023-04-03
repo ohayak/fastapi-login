@@ -15,7 +15,7 @@ class GroupBase(SQLModel):
 
 
 class Group(BaseUUIDModel, GroupBase, table=True):
-    created_by_id: Optional[UUID] = Field(default=None, foreign_key="User.id")
+    created_by_id: Optional[UUID] = Field(foreign_key="User.id")
     created_by: "User" = Relationship(
         sa_relationship_kwargs={
             "lazy": "selectin",

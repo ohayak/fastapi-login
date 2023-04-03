@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
+from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, RedisDsn, validator
 
 
 class Settings(BaseSettings):
@@ -20,11 +20,11 @@ class Settings(BaseSettings):
     DB_PORT: Union[int, str] = 5432
     DB_NAME: str = "data"
     DB_ECHO: bool = False
-    DB_URI: Optional[str]
-    ASYNC_DB_URI: Optional[str]
+    DB_URL: Optional[str]
+    ASYNC_DB_URL: Optional[str]
 
-    @validator("ASYNC_DB_URI", pre=True)
-    def assemble_async_db_data_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    @validator("ASYNC_DB_URL", pre=True)
+    def assemble_async_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
@@ -36,8 +36,8 @@ class Settings(BaseSettings):
             path=f"/{values.get('DB_NAME') or ''}",
         )
 
-    @validator("DB_URI", pre=True)
-    def assemble_db_data_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+    @validator("DB_URL", pre=True)
+    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
@@ -59,6 +59,21 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: str = "6379"
+    REDIS_USER: Optional[str]
+    REDIS_PASSWORD: Optional[str]
+    REDIS_URL: Optional[str]
+
+    @validator("REDIS_URL", pre=True)
+    def assemble_redis_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+        if isinstance(v, str):
+            return v
+        return RedisDsn.build(
+            scheme="redis",
+            user=values.get("REDIS_USER"),
+            password=values.get("REDIS_PASSWORD"),
+            host=values.get("REDIS_HOST"),
+            port=str(values.get("REDIS_PORT")),
+        )
 
     SECRET_KEY: str = "KJMAgRxFdlijZPU8KLLWiJYsebxcDxpTMZDDqGRjJZg"
     ENCRYPT_KEY: str = "q+Y0dzUKGhfDDpAYouIUqLsY/NBIQJ2NMKFWeqjxsk8="

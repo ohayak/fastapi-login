@@ -1,6 +1,5 @@
 import logging
 
-import fakeredis
 from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
@@ -8,10 +7,10 @@ from fastapi_pagination import add_pagination
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from api.deps import get_redis_client
 from api.v1 import api_router as api_router_v1
 from core.config import settings
-from db.context import ContextDBMiddleware
+from middlewares.asql import ContextDatabaseMiddleware
+from middlewares.redis import ContextRedisMiddleware, get_ctx_client
 
 # Core Application Instance
 app = FastAPI(
@@ -21,7 +20,9 @@ app = FastAPI(
 )
 
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
-app.add_middleware(ContextDBMiddleware)
+app.add_middleware(ContextDatabaseMiddleware, url=settings.ASYNC_DB_URL)
+app.add_middleware(ContextRedisMiddleware, url=settings.REDIS_URL)
+
 
 # Set all CORS origins enabled
 if settings.BACKEND_CORS_ORIGINS:
@@ -52,7 +53,11 @@ async def root():
 
 @app.on_event("startup")
 async def on_startup():
-    redis_client = await get_redis_client()
+    redis_client = get_ctx_client()
+    try:
+        await redis_client.ping()
+    except Exception:
+        raise ConnectionRefusedError(f"Redis server not responding using {redis_client.get_connection_kwargs()}")
     FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
     logging.info("startup fastapi")
 

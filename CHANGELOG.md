@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 
-## [1.0.0]
+- favlist
+- streams
+
+## [0.0.1]
 
 - login
 - role
 - user
 - group
+- playlist

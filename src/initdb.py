@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession, engine
 
 import crud
 from core.config import settings
-from db.session import session_by_schema
+from middlewares.asql import create_session
 from schemas.group_schema import IGroupCreate
 from schemas.role_schema import IRoleCreate
 from schemas.user_schema import IUserCreate
@@ -71,7 +71,7 @@ async def initdb(db_session: AsyncSession) -> None:
 
 async def main() -> None:
     print("Creating initial data")
-    async with session_by_schema() as session:
+    async with create_session(settings.ASYNC_DB_URL) as session:
         await initdb(session)
     print("Initial data created")
 

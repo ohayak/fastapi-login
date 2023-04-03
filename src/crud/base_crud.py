@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from fastapi_pagination import Page
+from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from pydantic import BaseModel
 from sqlalchemy import exc
@@ -14,8 +14,8 @@ from sqlmodel import ARRAY, SQLModel, Unicode, and_, func, literal, or_, select,
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
-from db.context import ctxdb
-from schemas.common_schema import FilterQuery, GroupQuery, IOrderEnum, PageQuery
+from middlewares.asql import get_ctx_session
+from schemas.common_schema import FilterQuery, GroupQuery, IOrderEnum
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -35,7 +35,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     async def get(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> Optional[ModelType]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         query = select(self.model).where(self.model.id == id)
         response = await db_session.execute(query)
         return response.scalar_one_or_none()
@@ -46,26 +46,35 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         list_ids: List[Union[UUID, str]],
         db_session: Optional[AsyncSession] = None,
     ) -> Optional[List[ModelType]]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         response = await db_session.execute(select(self.model).where(self.model.id.in_(list_ids)))
         return response.scalars().all()
 
     async def get_count(self, db_session: Optional[AsyncSession] = None) -> Optional[ModelType]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         response = await db_session.execute(select(func.count()).select_from(select(self.model).subquery()))
+        return response.scalar_one()
+
+    async def get_one(
+        self, *, query: Optional[Union[T, Select[T]]] = None, db_session: Optional[AsyncSession] = None
+    ) -> Optional[ModelType]:
+        db_session = db_session or get_ctx_session()
+        if query is None:
+            query = select(self.model).order_by(self.model.id)
+        response = await db_session.execute(query)
         return response.scalar_one()
 
     async def get_multi(
         self,
         *,
         query: Optional[Union[T, Select[T]]] = None,
-        skip: int = 0,
+        offset: int = 0,
         limit: int = 100,
         db_session: Optional[AsyncSession] = None,
     ) -> List[ModelType]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         if query is None:
-            query = select(self.model).offset(skip).limit(limit).order_by(self.model.id)
+            query = select(self.model).offset(offset).limit(limit).order_by(self.model.id)
         response = await db_session.execute(query)
         return response.scalars().all()
 
@@ -73,10 +82,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         *,
         query: Optional[Union[T, Select[T]]] = None,
-        params: Optional[PageQuery] = PageQuery(),
+        params: Params = Params(),
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         if query is None:
             query = select(self.model)
         try:
@@ -94,11 +103,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         order_by: Optional[str] = None,
         order: Optional[IOrderEnum] = IOrderEnum.asc,
-        params: Optional[PageQuery] = PageQuery(),
+        params: Params = Params(),
         selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
 
         columns = self.model.__table__.columns
 
@@ -251,12 +260,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         *,
         filters: FilterQuery = FilterQuery(),
-        params: Optional[PageQuery] = PageQuery(),
+        params: Params = Params(),
         selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
 
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         columns = self.model.__table__.columns
 
         if filters.filter_by is None:
@@ -285,10 +294,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         filters: FilterQuery = FilterQuery(),
         groups: GroupQuery = GroupQuery(),
-        params: Optional[PageQuery] = PageQuery(),
+        params: Params = Params(),
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
 
         columns = self.model.__table__.columns
 
@@ -405,11 +414,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         order_by: Optional[str] = None,
         order: Optional[IOrderEnum] = IOrderEnum.asc,
-        skip: int = 0,
+        offset: int = 0,
         limit: int = 100,
         db_session: Optional[AsyncSession] = None,
     ) -> List[ModelType]:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
 
         columns = self.model.__table__.columns
 
@@ -422,7 +431,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             else:
                 order_by = columns[order_by]
 
-        query = select(self.model).offset(skip).limit(limit)
+        query = select(self.model).offset(offset).limit(limit)
 
         if order_by is not None:
             if order == IOrderEnum.asc:
@@ -441,7 +450,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         created_by_id: Optional[Union[UUID, str]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> ModelType:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         db_obj = self.model.from_orm(obj_in)  # type: ignore
         db_obj.created_at = datetime.utcnow()
         db_obj.updated_at = datetime.utcnow()
@@ -467,7 +476,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_new: Union[UpdateSchemaType, Dict[str, Any], ModelType],
         db_session: Optional[AsyncSession] = None,
     ) -> ModelType:
-        db_session = db_session or ctxdb.session
+        db_session = db_session or get_ctx_session()
         obj_data = jsonable_encoder(obj_current)
 
         if isinstance(obj_new, dict):
@@ -487,8 +496,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db_session.refresh(obj_current)
         return obj_current
 
-    async def remove(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> ModelType:
-        db_session = db_session or ctxdb.session
+    async def delete(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> ModelType:
+        db_session = db_session or get_ctx_session()
         response = await db_session.execute(select(self.model).where(self.model.id == id))
         obj = response.scalar_one()
         await db_session.delete(obj)

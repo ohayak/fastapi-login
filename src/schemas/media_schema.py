@@ -3,10 +3,8 @@ from uuid import UUID
 
 from pydantic import validator
 
-import api
-from core.config import settings
+from middlewares.minio import get_ctx_client
 from models.media_model import ImageMediaBase, MediaBase
-from utils.minio_client import MinioClient
 from utils.partial import optional
 
 
@@ -30,8 +28,8 @@ class IMediaRead(MediaBase):
     def default_icon(cls, value: Any, values: Any) -> str:
         if values["path"] is None:
             return ""
-        minio: MinioClient = api.deps.minio_auth()
-        url = minio.presigned_get_object(bucket_name=settings.MINIO_BUCKET, object_name=values["path"])
+        minio = get_ctx_client()
+        url = minio.presigned_get_file(file_name=values["path"])
         return url
 
 

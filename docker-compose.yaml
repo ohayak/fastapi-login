@@ -13,9 +13,9 @@ services:
     image: postgres:14.0
     container_name: dbdata
     environment:
-      - POSTGRES_USER=data
-      - POSTGRES_PASSWORD=data
-      - POSTGRES_DB=data
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=boredtv
     volumes:
       - data:/var/lib/pgsql
     ports:
@@ -34,6 +34,9 @@ services:
     - DB_INIT=true
     - DB_HOST=dbdata
     - DB_PORT=5432
+    - DB_USER=postgres
+    - DB_PASSWORD=postgres
+    - DB_NAME=boredtv
     - REDIS_HOST=redis
     - LOG_LEVEL=INFO
     - ACCESSLOG=true

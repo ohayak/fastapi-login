@@ -1,5 +1,4 @@
-import logging
-from typing import AsyncGenerator, List
+from typing import List
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -7,46 +6,17 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from pydantic import ValidationError
 from redis.asyncio import Redis, from_url
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 import crud
 from core import security
 from core.config import settings
-from db.session import session_by_schema
+from middlewares.redis import get_ctx_client
+from models.playlist_model import Playlist
 from models.user_model import User
 from schemas.common_schema import IMetaGeneral, TokenType
+from schemas.stream_schema import IStreamCreate
 from schemas.user_schema import IUserCreate, IUserRead
-from utils.minio_client import MinioClient
 from utils.token import get_tokens
-
-
-async def get_redis_client() -> Redis:
-    redis = from_url(
-        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
-        max_connections=10,
-        encoding="utf8",
-        decode_responses=True,
-    )
-
-    try:
-        await redis.ping()
-    except Exception:
-        logging.error("Redis server not responding, using fake server")
-        import fakeredis
-
-        redis = fakeredis.FakeStrictRedis()
-
-    return redis
-
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with session_by_schema() as session:
-        yield session
-
-
-async def get_db_by_schema(schema: str = None) -> AsyncGenerator[AsyncSession, None]:
-    async with session_by_schema(schema) as session:
-        yield session
 
 
 async def get_general_meta() -> IMetaGeneral:
@@ -60,7 +30,7 @@ reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/ac
 def get_current_user(required_roles: List[str] = None) -> User:
     async def current_user(
         token: str = Depends(reusable_oauth2),
-        redis_client: Redis = Depends(get_redis_client),
+        redis_client: Redis = Depends(get_ctx_client),
     ) -> User:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
@@ -105,17 +75,6 @@ def get_current_user(required_roles: List[str] = None) -> User:
     return current_user
 
 
-def minio_auth() -> MinioClient:
-    # minio_client = MinioClient(
-    #     access_key=settings.MINIO_ROOT_USER,
-    #     secret_key=settings.MINIO_ROOT_PASSWORD,
-    #     bucket_name=settings.MINIO_BUCKET,
-    #     minio_url=settings.MINIO_URL,
-    # )
-    # return minio_client
-    raise NotImplementedError()
-
-
 async def user_exists(new_user: IUserCreate) -> IUserCreate:
     user = await crud.user.get_by_email(email=new_user.email)
     if user:
@@ -126,7 +85,7 @@ async def user_exists(new_user: IUserCreate) -> IUserCreate:
     return new_user
 
 
-async def is_valid_user(user_id: UUID) -> IUserRead:
+async def is_valid_user(user_id: UUID) -> User:
     user = await crud.user.get(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User no found")
