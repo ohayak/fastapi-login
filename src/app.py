@@ -8,9 +8,9 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from api.v1 import api_router as api_router_v1
-from core.config import settings
+from core.settings import settings
 from middlewares.asql import ContextDatabaseMiddleware
-from middlewares.redis import ContextRedisMiddleware, get_ctx_session
+from middlewares.redis import ContextRedisMiddleware, get_ctx_client
 
 # Core Application Instance
 app = FastAPI(
@@ -34,18 +34,6 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-
-class CustomException(Exception):
-    http_code: int
-    code: str
-    message: str
-
-    def __init__(self, http_code: int = None, code: str = None, message: str = None):
-        self.http_code = http_code if http_code else 500
-        self.code = code if code else str(self.http_code)
-        self.message = message
-
-
 @app.get("/")
 async def root():
     return {"message": f"Welcome to {settings.PROJECT_NAME} {settings.API_V1_STR}"}
@@ -53,7 +41,12 @@ async def root():
 
 @app.on_event("startup")
 async def on_startup():
-    redis_client = get_ctx_session()
+    logging.basicConfig(
+        level=settings.LOG_LEVEL,
+        format="[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S %z",
+    )
+    redis_client = get_ctx_client()
     try:
         await redis_client.ping()
     except Exception:

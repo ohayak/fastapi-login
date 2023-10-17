@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Recovery</title>
+    <style>
+      /* Define colors */
+      :root {
+        --color-white: #ffffff;
+        --color-indigo: #333399;
+        --color-text: #555555;
+        --color-secondary: #888888;
+      }
+
+      /* Add custom styling here */
+      body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        background-color: var(--color-white);
+        color: var(--color-text);
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+      }
+
+      p {
+        margin-bottom: 10px;
+        color: var(--color-text);
+      }
+
+      a {
+        color: var(--color-indigo);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .signature {
+        font-style: italic;
+        color: var(--color-secondary);
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--color-secondary);
+        margin-top: 20px;
+      }
+    </style>
+</head>
+<body>
+    <p>Dear {{ first_name }} {{ last_name }},</p>
+    <p>Thank you for signing up with our app. To complete your registration, please verify your email address by clicking the link below:</p>
+    <p><a href="{{ verification_link }}">Verify Email</a></p>
+    <p>If you did not create an account, please ignore this email.</p>
+    <div class="signature">
+      <p>Best regards,</p>
+      <p>The Dev Team</p>
+    </div>
+    <p class="note">Note: This is an automated email, please do not reply.</p>
+</body>
+</html>

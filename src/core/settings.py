@@ -6,7 +6,7 @@ from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, RedisDsn, 
 class Settings(BaseSettings):
     API_VERSION: str = "v1"
     API_V1_STR: str = f"/{API_VERSION}"
-    PROJECT_NAME: str = "fastapi-async-pg"
+    PROJECT_NAME: str = "fastapi-login"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 1  # 1 hour
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 100  # 100 days
     WEB_CONCURRENCY = 9
@@ -98,6 +98,12 @@ class Settings(BaseSettings):
         elif isinstance(v, (list, str)):
             return v
         raise ValueError(v)
+
+    LOG_LEVEL: str = "info"
+
+    @validator("LOG_LEVEL", pre=True)
+    def log_level(cls, v: str) -> str:
+        return v.upper()
 
 
 settings = Settings()

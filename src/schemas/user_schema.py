@@ -2,12 +2,21 @@ from enum import Enum
 from typing import List, Optional
 from uuid import UUID
 
+from pydantic import BaseModel, EmailStr
+
 from models.group_model import GroupBase
 from models.user_model import UserBase
 from utils.partial import optional
 
 from .media_schema import IImageMediaRead
 from .role_schema import IRoleRead
+
+
+class IUserSignup(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    password: str
 
 
 class IUserCreate(UserBase):

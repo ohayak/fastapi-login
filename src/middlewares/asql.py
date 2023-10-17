@@ -6,7 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.types import ASGIApp
 
-from core.config import settings
+from core.settings import settings
 
 
 class MissingSessionError(Exception):
@@ -19,7 +19,7 @@ class MissingSessionError(Exception):
         a context manager e.g.:
 
         async with db():
-            await get_ctx_sql().execute(foo.select()).fetchall()
+            await get_ctx_session().execute(foo.select()).fetchall()
         """
 
         super().__init__(msg)

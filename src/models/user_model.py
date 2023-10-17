@@ -2,7 +2,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from pydantic import EmailStr
-from sqlmodel import ARRAY, VARCHAR, BigInteger, Column, DateTime, Field, Relationship, SQLModel
+from sqlmodel import ARRAY, VARCHAR, Column, Field, Relationship, SQLModel
 
 from models.base_uuid_model import BaseUUIDModel
 from models.links_model import LinkGroupUser
@@ -12,7 +12,8 @@ from models.media_model import ImageMedia
 class UserBase(SQLModel):
     first_name: str
     last_name: str
-    email: Optional[EmailStr] = Field(index=True, sa_column_kwargs={"unique": True})
+    email: EmailStr = Field(index=True, sa_column_kwargs={"unique": True})
+    is_verified: bool = Field(default=False)
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
     role_id: Optional[UUID] = Field(foreign_key="Role.id")

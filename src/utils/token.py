@@ -4,7 +4,6 @@ from uuid import UUID
 
 from redis.asyncio import Redis
 
-from models.user_model import User
 from schemas.common_schema import TokenType
 
 
@@ -17,11 +16,11 @@ async def set_token(
     user_id: UUID,
     token: str,
     token_type: TokenType,
-    expire_time: int,
+    expire_time: timedelta,
 ):
     token_key = gen_token_key(user_id, token_type)
     await redis_client.sadd(token_key, token)
-    await redis_client.expire(token_key, timedelta(minutes=expire_time))
+    await redis_client.expire(token_key, expire_time)
 
 
 async def get_tokens(redis_client: Redis, user_id: UUID, token_type: TokenType) -> Set[str]:

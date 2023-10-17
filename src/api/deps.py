@@ -3,17 +3,18 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from fastapi_mail import ConnectionConfig, FastMail
 from jose import jwt
 from pydantic import ValidationError
-from redis.asyncio import Redis, from_url
+from redis.asyncio import Redis
 
 import crud
 from core import security
-from core.config import settings
-from middlewares import get_ctx_redis
+from core.settings import settings
+from middlewares.redis import get_ctx_client
 from models.user_model import User
 from schemas.common_schema import IMetaGeneral, TokenType
-from schemas.user_schema import IUserCreate, IUserRead
+from schemas.user_schema import IUserCreate, IUserSignup
 from utils.token import get_tokens
 
 
@@ -28,7 +29,7 @@ reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/ac
 def get_current_user(required_roles: List[str] = None) -> User:
     async def current_user(
         token: str = Depends(reusable_oauth2),
-        redis_client: Redis = Depends(get_ctx_redis),
+        redis_client: Redis = Depends(get_ctx_client),
     ) -> User:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
@@ -73,7 +74,7 @@ def get_current_user(required_roles: List[str] = None) -> User:
     return current_user
 
 
-async def user_exists(new_user: IUserCreate) -> IUserCreate:
+async def user_exists(new_user: IUserSignup | IUserCreate) -> IUserCreate:
     user = await crud.user.get_by_email(email=new_user.email)
     if user:
         raise HTTPException(
@@ -89,3 +90,20 @@ async def is_valid_user(user_id: UUID) -> User:
         raise HTTPException(status_code=404, detail="User no found")
 
     return user
+
+
+def get_mail_manager() -> FastMail:
+    conf = ConnectionConfig(
+        MAIL_USERNAME="mail-service-user",
+        MAIL_PASSWORD="mail-service-password",
+        MAIL_FROM="noreply@fast.api",
+        MAIL_PORT=587,
+        MAIL_SERVER="smtp.main.service",
+        MAIL_FROM_NAME="Dev",
+        MAIL_STARTTLS=True,
+        MAIL_SSL_TLS=False,
+        USE_CREDENTIALS=True,
+        VALIDATE_CERTS=True,
+        TEMPLATE_FOLDER="templates",
+    )
+    return FastMail(conf)

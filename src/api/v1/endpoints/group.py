@@ -49,7 +49,7 @@ async def get_group_by_id(
 )
 async def create_group(
     group: IGroupCreate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Creates a new group
@@ -65,7 +65,7 @@ async def create_group(
 async def update_group(
     group_id: UUID,
     group: IGroupUpdate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Updates a group by its id
@@ -100,7 +100,7 @@ async def delete_group(
 async def add_user_into_a_group(
     user_id: UUID,
     group_id: UUID,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     Adds a user into a group
@@ -121,7 +121,7 @@ async def add_user_into_a_group(
 async def delete_user_from_group(
     user_id: UUID,
     group_id: UUID,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])),
+    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
 ):
     """
     remove a user from a group

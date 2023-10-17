@@ -1,16 +1,15 @@
-FROM continuumio/miniconda3:4.12.0
+FROM python:3.11-alpine3.18
+
+RUN apk add --no-cache bash gcc libffi-dev libc-dev
 
 # python
 ENV PYTHONUNBUFFERED=1 \
-    # prevents python creating .pyc files
-    PYTHONDONTWRITEBYTECODE=1 \
-    # pip
-    PIP_NO_CACHE_DIR=off \
+    PIP_NO_CACHE_DIR=on \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100
+    PIP_DEFAULT_TIMEOUT=300
 
 COPY . /app/
 WORKDIR /app
-RUN conda env update -n base -f conda-env.yaml
+RUN pip install -r requirements.txt
 
-CMD ["bash", "start.sh"]
+ENTRYPOINT [ "python", "main.py" ]

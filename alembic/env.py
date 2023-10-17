@@ -7,7 +7,7 @@ from sqlmodel import SQLModel, create_engine
 from sqlmodel.ext.asyncio.session import AsyncEngine
 
 from alembic import context
-from core.config import Settings
+from core.settings import Settings
 from models import *  # noqa
 
 settings = Settings()

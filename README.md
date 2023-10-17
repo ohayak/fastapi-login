@@ -1,117 +1,79 @@
-# BIB API
+# Login API
 
-## Quick start
+This API is designed to serve as a base for custom APIs that require user management and login functionality. It is built using FastAPI and SQLModel, and follows the CRUD (Create, Read, Update, Delete) pattern for data management.
 
-To run project locally you can just type `docker-compose up`. First time may fail, restart.
+This API provides a range of features for user management and authentication. Here are the main features available:
 
-## Install depenedencies
+1. User Management: The API provides comprehensive user management features. You can create, read, update, and delete users. The user model includes fields like first name, last name, email, phone, and more.
 
-Conda is used for dedendency management.
+2. Group Management: The API allows you to manage groups. You can create, read, update, and delete groups. The group model includes fields like name and description.
 
-if you want to manage python environment yourself with conda for example, the workflow is as follows:
+3. Authentication: The API provides robust authentication features. It includes methods for user authentication, password hashing, and token generation.
 
-* Create a conda env
-* Activate conda env before performing any actions
+4. Role-Based Access Control (RBAC): The API supports role-based access control. This allows you to assign roles to users and control their access to resources based on their role.
 
-You need to install all dependencies with conda
+5. Social Login: The API supports social login. This allows users to log in using their social media accounts.
 
-```bash
-conda env update -f conda-env.yaml
+6. Pagination: The API supports pagination. This allows you to retrieve data in small chunks, which can improve performance for large datasets.
 
-# For developpers only
-conda env update -f conda-env-dev.yaml
-```
+7. Filtering: The API supports filtering. This allows you to retrieve data based on specific criteria.
 
-## Settings
 
-All parameters required are defined in `src/core/config.py`, you can pass this parameters to the program inside a `.env` file and start the server with `./start.sh --dotenv`.
-You can also use `dotenv run <command>` to load parameters from `.env` file with any command.
+## Models
 
-How `.env` looks like:
+Models are Python classes that define the structure of the data. They are used to interact with the database. Here are some of the models used in this API:
 
-```bash
+- User: Represents a user in the system. It includes fields like first_name, last_name, email, is_verified, is_active, is_superuser, role_id, phone, and image_id.
 
-# Configuration of auth database used for login (managed by alembic)
-DB_AUTH_HOST=<ip, localhost etc>
-DB_AUTH_PORT=5432
-DB_AUTH_NAME=auth
-DB_AUTH_USER=auth
-DB_AUTH_PASSWORD="my-password"
+- Group: Represents a group in the system. It includes fields like name, description, created_by_id, and users.
 
-# Configuration of batetry data database
-DB_DATA_HOST=<ip, localhost etc>
-DB_DATA_PORT=5432
-DB_DATA_NAME=data
-DB_DATA_USER=data
-DB_DATA_PASSWORD="my-password"
+## Schemas
 
-# logs verbosity DEBUG > INFO > WARNING > ERROR
-LOG_LEVEL=INFO
+Schemas are Pydantic models that are used for data validation and serialization. They define the structure of the data that is sent and received by the API. Here are some of the schemas used in this API:
 
-# hotreload: restart server each time you edit a file, usefile for developpers
-RELOAD=true
+- IUserCreate: Defines the data required to create a new user.
+- IGroupCreate: Defines the data required to create a new group.
 
-# enable or not access logs
-ACCESSLOG=true
+## CRUD Operations
 
-# enable or not error logs
-ERRORLOG=true
+CRUD operations are defined in the crud directory. Each file in this directory corresponds to a model and defines the CRUD operations for that model. Here are some of the CRUD operations defined in this API:
 
-# run database migration before startup
-DB_MIGRATE=true
+- CRUDUser: Defines the CRUD operations for the User model. It includes methods like get_by_email, create_with_role, add_social_login, and authenticate.
+- CRUDGroup: Defines the CRUD operations for the Group model.
 
-# init database before startup
-DB_INIT=true
-```
+## Endpoints
 
-/!\ `.env` file contains sensible informations like database IP and passwords, never push this file to git repository.
+Endpoints are defined in the api directory. Each file in this directory corresponds to a model and defines the endpoints for that model. Here are some of the endpoints defined in this API:
 
-## Startup
+- list_users: Retrieves a list of users. Requires the admin or manager role.
+- login: Authenticates a user and returns a token.
 
-Before running the application don't forget to apply pending migrations.
-You can apply migrations manualy:
+## Quickstart
 
-```bash
-alembic upgrade heads
-```
+To start the application, use the command `docker-compose up`
 
-Or automaticly, by setting environment variables `DB_MIGRATE=true` and `DB_INIT=true`, or just apppend `--migrate` and `--init` options to `./start.sh` command
+## For Developers
 
-```bash
-# use --dotenv to load .env file
-# Examples
-./start.sh --dotenv
-./start.sh --init --migrate
-./start
-```
+This section provides a guide for developers on how to set up and manage the application.
 
-## Pushing data at startup
+### Installation
 
-If you need to create new users/roles/groups use `src/initdb.py` script to push new entitites to database and run `./start.sh --init` to make the changes at startup.
+The application requires certain dependencies to run. These dependencies are listed in the `requirements.txt` file. To install these dependencies, run the following command in your terminal: `pip install -r requirements.txt`.
 
-## How to build images
+### Starting the Application
 
-The easiest way if to push a tag to git and Bitbucket Pipelines will create a new image and push it. If you want to do this step your self, just execute comands defined on the `bitbucket-pipelines.yaml` in your machine
+Once the dependencies are installed, you can start the application using the `main.py` script. This script accepts several command line arguments:
+   - `-v` or `--verbose`: Enables verbose output.
+   - `-e` or `--dotenv`: Loads the .env file.
+   - `-m` or `--migrate`: Runs database migrations.
+   - `-i` or `--init`: Initializes the database.
+   - `-r` or `--reload`: Starts the application in reload mode.
+   To start the application, run the following command in your terminal: `python main.py`.
 
-## Bitbucket pipelines
+### Managing Data Migrations
 
-Please refer to `bitbucket-pipelines.yaml` and Bitbucket pipelines documentation
-/!\ Environment variables used in the pipeline, are defined via the web interface manually. Check [Repository varaibles](https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/)
+The application uses Alembic to manage data migrations. Alembic is a database migration tool for SQLAlchemy. Here are the steps to manage data migrations:
+   - Initialize Alembic: Before you can use Alembic, you need to initialize it. Run the following command in your terminal to initialize Alembic: `alembic init alembic`.
+   - Generate a Migration Script: After initializing Alembic, you can generate a migration script. The migration script contains the changes you want to make to your database. Run the following command in your terminal to generate a migration script: `alembic revision --autogenerate -m "Your message"`.
+   - Apply Migrations: Once you have a migration script, you can apply the migrations to your database. Run the following command in your terminal to apply migrations: `alembic upgrade head`.
 
-## Database migration tools
-
-Please check [Alembic](https://alembic.sqlalchemy.org/en/latest/) for details. Below a list of must used commands
-
-```bash
-# upgrade database to the latest version
-alembic upgrade heads
-
-# downgrade database
-alembic downgrade heads-1
-
-# generate empty migration
-alembic revision -m "some comment"
-
-# generate migration
-alembic revision --autogenerate -m "some comment"
-```

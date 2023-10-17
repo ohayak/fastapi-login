@@ -22,7 +22,7 @@ class ClientNotInitialisedError(Exception):
 _client: ContextVar[Optional[Redis]] = ContextVar("_client", default=None)
 
 
-def get_ctx_session() -> Redis:
+def get_ctx_client() -> Redis:
     """Return an instance of Client local to the current async context."""
 
     client = _client.get()

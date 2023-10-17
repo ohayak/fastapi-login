@@ -5,17 +5,17 @@ volumes:
 services:
   redis:
     container_name: redis
-    image: "redis:7-alpine3.17"
+    image: redis:7-alpine3.18
     restart: always
     ports:
       - 6379:6379
-  dbdata:
-    image: postgres:14.0
-    container_name: dbdata
+  pgsql:
+    container_name: pgsql
+    image: postgres:16-alpine3.18
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=boredtv
+      - POSTGRES_DB=data
     volumes:
       - data:/var/lib/pgsql
     ports:
@@ -30,24 +30,22 @@ services:
       context: .
     container_name: api
     environment:
-    - DB_MIGRATE=true
-    - DB_INIT=true
-    - DB_HOST=dbdata
-    - DB_PORT=5432
-    - DB_USER=postgres
-    - DB_PASSWORD=postgres
-    - DB_NAME=boredtv
-    - REDIS_HOST=redis
-    - LOG_LEVEL=INFO
-    - ACCESSLOG=true
-    - ERRORLOG=true
-    - RELOAD=true
-    - FIRST_SUPERUSER_EMAIL=admin@fast.api
-    - FIRST_SUPERUSER_PASSWORD=password
+      - DB_MIGRATE=true
+      - DB_INIT=true
+      - DB_HOST=pgsql
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=data
+      - REDIS_HOST=redis
+      - LOG_LEVEL=info
+      - ACCESSLOG=true
+      - FIRST_SUPERUSER_EMAIL=admin@fast.api
+      - FIRST_SUPERUSER_PASSWORD=password
     depends_on:
       redis:
         condition: service_started
-      dbdata:
+      pgsql:
         condition: service_healthy
     ports:
       - 8000:8000

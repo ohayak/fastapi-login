@@ -15,7 +15,7 @@ class IGroupRead(GroupBase):
     id: UUID
 
 
-# All these fields are optional
+# All fields are optional
 @optional
 class IGroupUpdate(GroupBase):
     pass

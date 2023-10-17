@@ -2,20 +2,19 @@ from io import BytesIO
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, File, Query, Response, UploadFile, status
+from fastapi import APIRouter, Body, Depends, File, Response, UploadFile, status
 from fastapi_pagination import Params
-from sqlmodel import and_, select
 
 import crud
 from api.deps import get_current_user, is_valid_user, user_exists
-from exceptions import ContentNoChangeException, IdNotFoundException, NameNotFoundException, UserSelfDeleteException
-from middlewares import Minio, get_ctx_minio
+from exceptions import ContentNoChangeException, IdNotFoundException, UserSelfDeleteException
+from middlewares.minio import Minio, get_ctx_client
 from models import Role, User
 from schemas.common_schema import FilterQuery
 from schemas.media_schema import IMediaCreate
 from schemas.response_schema import IResponse, IResponsePage, create_response
 from schemas.role_schema import IRoleEnum
-from schemas.user_schema import IUserCreate, IUserRead, IUserReadWithoutGroups, IUserStatus
+from schemas.user_schema import IUserCreate, IUserRead, IUserReadWithoutGroups
 from utils.resize_image import modify_image
 
 router = APIRouter()
@@ -34,6 +33,16 @@ async def list_users(
     return create_response(data=users)
 
 
+@router.get("/me", response_model=IResponse[IUserRead])
+async def get_my_data(
+    current_user: User = Depends(get_current_user()),
+):
+    """
+    Gets my user profile information
+    """
+    return create_response(data=current_user)
+
+
 @router.get("/{user_id}", response_model=IResponse[IUserRead])
 async def get_user_by_id(
     user_id: UUID,
@@ -46,16 +55,6 @@ async def get_user_by_id(
         return create_response(data=user)
     else:
         raise IdNotFoundException(User, id=user_id)
-
-
-@router.get("/me", response_model=IResponse[IUserRead])
-async def get_my_data(
-    current_user: User = Depends(get_current_user()),
-):
-    """
-    Gets my user profile information
-    """
-    return create_response(data=current_user)
 
 
 @router.post("/new", response_model=IResponse[IUserRead], status_code=status.HTTP_201_CREATED)
@@ -71,7 +70,7 @@ async def create_user(
     if not role:
         raise IdNotFoundException(Role, id=new_user.role_id)
 
-    user = await crud.user.create_with_role(obj_in=new_user)
+    user = await crud.user.create_with_role(obj_in=new_user, role_id=role.id)
     return create_response(data=user)
 
 
@@ -96,7 +95,7 @@ async def upload_my_image(
     description: Optional[str] = Body(None),
     image_file: UploadFile = File(...),
     current_user: User = Depends(get_current_user()),
-    minio_client: Minio = Depends(get_ctx_minio),
+    minio_client: Minio = Depends(get_ctx_client),
 ):
     """
     Uploads a user image
@@ -128,7 +127,7 @@ async def upload_user_image(
     description: Optional[str] = Body(None),
     image_file: UploadFile = File(...),
     current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
-    minio_client: Minio = Depends(get_ctx_minio),
+    minio_client: Minio = Depends(get_ctx_client),
 ):
     """
     Uploads a user image by his/her id

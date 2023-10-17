@@ -21,5 +21,4 @@ class IRoleRead(RoleBase):
 
 class IRoleEnum(str, Enum):
     admin = "admin"
-    manager = "manager"
-    operator = "operator"
+    user = "user"
