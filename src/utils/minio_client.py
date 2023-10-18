@@ -2,7 +2,6 @@ import logging
 from datetime import timedelta
 
 from minio import Minio as Base
-from pydantic import BaseModel
 
 
 class Minio(Base):

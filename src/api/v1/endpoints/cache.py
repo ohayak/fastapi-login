@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import Union
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from fastapi_cache.decorator import cache
 
-import crud
 from schemas.response_schema import IResponse, create_response
 
 router = APIRouter()

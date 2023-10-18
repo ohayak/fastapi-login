@@ -76,4 +76,3 @@ The application uses Alembic to manage data migrations. Alembic is a database mi
    - Initialize Alembic: Before you can use Alembic, you need to initialize it. Run the following command in your terminal to initialize Alembic: `alembic init alembic`.
    - Generate a Migration Script: After initializing Alembic, you can generate a migration script. The migration script contains the changes you want to make to your database. Run the following command in your terminal to generate a migration script: `alembic revision --autogenerate -m "Your message"`.
    - Apply Migrations: Once you have a migration script, you can apply the migrations to your database. Run the following command in your terminal to apply migrations: `alembic upgrade head`.
-

@@ -11,8 +11,9 @@ from models.media_model import ImageMedia
 
 class UserBase(SQLModel):
     first_name: str
-    last_name: str
+    last_name: Optional[str]
     email: EmailStr = Field(index=True, sa_column_kwargs={"unique": True})
+    is_new: bool = Field(default=False)
     is_verified: bool = Field(default=False)
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
@@ -37,4 +38,11 @@ class User(BaseUUIDModel, UserBase, table=True):
             "lazy": "selectin",
             "primaryjoin": "User.image_id==ImageMedia.id",
         }
+    )
+    wallets: List["Wallet"] = Relationship(  # noqa: F821
+        back_populates="user",
+        sa_relationship_kwargs={
+            "lazy": "selectin",
+            "primaryjoin": "User.id==Wallet.user_id",
+        },
     )

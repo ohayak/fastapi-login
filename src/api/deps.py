@@ -6,16 +6,15 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi_mail import ConnectionConfig, FastMail
 from jose import jwt
 from pydantic import ValidationError
-from redis.asyncio import Redis
 
 import crud
 from core import security
 from core.settings import settings
-from middlewares.redis import get_ctx_client
 from models.user_model import User
-from schemas.common_schema import IMetaGeneral, TokenType
+from schemas.common_schema import IMetaGeneral
+from schemas.login_schema import IWalletSignup
 from schemas.user_schema import IUserCreate, IUserSignup
-from utils.token import get_tokens
+from utils.token import TokenType, get_tokens
 
 
 async def get_general_meta() -> IMetaGeneral:
@@ -23,31 +22,30 @@ async def get_general_meta() -> IMetaGeneral:
     return IMetaGeneral(roles=current_roles)
 
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/web2/token")
 
 
 def get_current_user(required_roles: List[str] = None) -> User:
     async def current_user(
         token: str = Depends(reusable_oauth2),
-        redis_client: Redis = Depends(get_ctx_client),
     ) -> User:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
         except jwt.JWTClaimsError as e:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Invalid access token: {str(e)}",
             )
         except (jwt.JWTError, ValidationError):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate access token",
             )
         user_id = payload["sub"]
-        valid_access_tokens = await get_tokens(redis_client, user_id, TokenType.ACCESS)
+        valid_access_tokens = await get_tokens(user_id, TokenType.ACCESS)
         if not valid_access_tokens or token not in valid_access_tokens:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Unknown token",
             )
         user: User = await crud.user.get(id=user_id)
@@ -65,7 +63,7 @@ def get_current_user(required_roles: List[str] = None) -> User:
 
             if not is_valid_role:
                 raise HTTPException(
-                    status_code=403,
+                    status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Role {required_roles} is required for this action",
                 )
 
@@ -74,7 +72,7 @@ def get_current_user(required_roles: List[str] = None) -> User:
     return current_user
 
 
-async def user_exists(new_user: IUserSignup | IUserCreate) -> IUserCreate:
+async def user_exists(new_user: IWalletSignup | IUserSignup | IUserCreate) -> IUserCreate:
     user = await crud.user.get_by_email(email=new_user.email)
     if user:
         raise HTTPException(

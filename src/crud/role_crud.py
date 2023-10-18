@@ -12,7 +12,7 @@ from schemas.role_schema import IRoleCreate, IRoleUpdate
 
 
 class CRUDRole(CRUDBase[Role, IRoleCreate, IRoleUpdate]):
-    async def get_role_by_name(self, *, name: str, db_session: Optional[AsyncSession] = None) -> Optional[Role]:
+    async def get_by_name(self, *, name: str, db_session: Optional[AsyncSession] = None) -> Optional[Role]:
         db_session = db_session or get_ctx_session()
         role = await db_session.execute(select(Role).where(Role.name == name))
         return role.scalar_one_or_none()

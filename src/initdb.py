@@ -1,6 +1,5 @@
 import asyncio
 import csv
-import datetime
 from typing import Dict, List, Union
 
 from sqlmodel import select
@@ -59,8 +58,6 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
 ]
 
 
-
-
 async def init_data_from_csv(db_session: AsyncSession, model, file_path: str):
     # Check if the table already has data
     existing_records = await db_session.execute(select(model))
@@ -87,15 +84,14 @@ async def init_data_from_csv(db_session: AsyncSession, model, file_path: str):
 
 
 async def initdb(db_session: AsyncSession) -> None:
-
     for role in roles:
-        role_current = await crud.role.get_role_by_name(name=role.name, db_session=db_session)
+        role_current = await crud.role.get_by_name(name=role.name, db_session=db_session)
         if not role_current:
             await crud.role.create(obj_in=role, db_session=db_session)
 
     for user in users:
         current_user = await crud.user.get_by_email(email=user["data"].email, db_session=db_session)
-        role = await crud.role.get_role_by_name(name=user["role"], db_session=db_session)
+        role = await crud.role.get_by_name(name=user["role"], db_session=db_session)
         if not current_user:
             await crud.user.create_with_role(obj_in=user["data"], role_id=role.id, db_session=db_session)
 

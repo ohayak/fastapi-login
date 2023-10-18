@@ -120,38 +120,6 @@ async def upload_my_image(
         return Response(f"Internal server error {e}", status_code=500)
 
 
-@router.post("/{user_id}/image", response_model=IResponse[IUserRead], include_in_schema=False)
-async def upload_user_image(
-    user: User = Depends(is_valid_user),
-    title: Optional[str] = Body(None),
-    description: Optional[str] = Body(None),
-    image_file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
-    minio_client: Minio = Depends(get_ctx_client),
-):
-    """
-    Uploads a user image by his/her id
-    """
-    try:
-        image_modified = modify_image(BytesIO(image_file.file.read()))
-        data_file = minio_client.upload_file(
-            file_name=image_file.filename,
-            file_data=BytesIO(image_modified.file_data),
-            content_type=image_file.content_type,
-        )
-        media = IMediaCreate(title=title, description=description, path=data_file.file_name)
-        user = await crud.user.update_photo(
-            user=user,
-            image=media,
-            heigth=image_modified.height,
-            width=image_modified.width,
-            file_format=image_modified.file_format,
-        )
-        return create_response(data=user)
-    except Exception as e:
-        return Response(f"Internal server error {e}", status_code=500)
-
-
 @router.put("/{user_id}", response_model=IResponse[IUserRead])
 async def update_user_info(
     user_id: UUID,

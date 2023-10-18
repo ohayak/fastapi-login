@@ -13,7 +13,6 @@ python-multipart==0.0.6
 passlib==1.7.4
 psycopg2-binary==2.9.9
 asyncpg==0.28.0
-greenlet==3.0.0
 redis<5.0.0
 minio==7.1.17
 pillow==10.1.0
@@ -26,3 +25,5 @@ hypercorn==0.14.4
 bcrypt==4.0.1
 fastapi-cache2[redis]==0.2.1
 cryptography==41.0.4
+web3==6.11.0
+petname==2.6.0

@@ -1,12 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Literal, Optional, Union
+from typing import List, Optional, Union
 
 from fastapi import Body, Query
 from pydantic import BaseModel, Field
 
 from .role_schema import IRoleRead
-from .user_schema import IUserRead
 
 
 class IMetaGeneral(BaseModel):
@@ -16,24 +15,6 @@ class IMetaGeneral(BaseModel):
 class IOrderEnum(str, Enum):
     asc = "asc"
     desc = "desc"
-
-
-class TokenType(str, Enum):
-    ACCESS = "access_token"
-    REFRESH = "refresh_token"
-    ID = "id_token"
-
-
-class Token(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: Literal["Bearer"] = "Bearer"
-    expires_in: int
-    user: IUserRead
-
-
-class RefreshToken(BaseModel):
-    refresh_token: str
 
 
 class FilterQuery(BaseModel):

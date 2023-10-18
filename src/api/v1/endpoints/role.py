@@ -52,7 +52,7 @@ async def create_role(
     """
     Create a new role
     """
-    role_current = await crud.role.get_role_by_name(name=role.name)
+    role_current = await crud.role.get_by_name(name=role.name)
     if not role_current:
         new_permission = await crud.role.create(obj_in=role)
         return create_response(data=new_permission)
@@ -76,7 +76,7 @@ async def update_permission(
     if current_role.name == role.name and current_role.description == role.description:
         raise ContentNoChangeException()
 
-    exist_role = await crud.role.get_role_by_name(name=role.name)
+    exist_role = await crud.role.get_by_name(name=role.name)
     if exist_role:
         raise NameExistException(Role, name=role.name)
 

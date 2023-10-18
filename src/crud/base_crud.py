@@ -34,7 +34,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    async def get(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> Optional[ModelType]:
+    async def get(self, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> Optional[ModelType]:
         db_session = db_session or get_ctx_session()
         query = select(self.model).where(self.model.id == id)
         response = await db_session.execute(query)
@@ -42,12 +42,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def get_by_ids(
         self,
-        *,
-        list_ids: List[Union[UUID, str]],
+        ids: List[Union[UUID, str]],
         db_session: Optional[AsyncSession] = None,
     ) -> Optional[List[ModelType]]:
         db_session = db_session or get_ctx_session()
-        response = await db_session.execute(select(self.model).where(self.model.id.in_(list_ids)))
+        response = await db_session.execute(select(self.model).where(self.model.id.in_(ids)))
         return response.scalars().all()
 
     async def get_count(self, db_session: Optional[AsyncSession] = None) -> int:
@@ -262,7 +261,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         selectexp: Optional[Union[T, Select[T]]] = None,
         db_session: Optional[AsyncSession] = None,
     ) -> Page[ModelType]:
-
         db_session = db_session or get_ctx_session()
         columns = self.model.__table__.columns
 
@@ -443,7 +441,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def create(
         self,
-        *,
         obj_in: Union[CreateSchemaType, ModelType],
         db_session: Optional[AsyncSession] = None,
     ) -> ModelType:
@@ -466,7 +463,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def create_multi(
         self,
-        *,
         objects: List[Union[CreateSchemaType, ModelType]],
         db_session: Optional[AsyncSession] = None,
     ) -> List[ModelType]:
@@ -520,7 +516,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db_session.refresh(obj_current)
         return obj_current
 
-    async def delete(self, *, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> ModelType:
+    async def delete(self, id: Union[UUID, str], db_session: Optional[AsyncSession] = None) -> ModelType:
         db_session = db_session or get_ctx_session()
         response = await db_session.execute(select(self.model).where(self.model.id == id))
         obj = response.scalar_one()

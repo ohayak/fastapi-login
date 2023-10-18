@@ -34,6 +34,7 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+
 @app.get("/")
 async def root():
     return {"message": f"Welcome to {settings.PROJECT_NAME} {settings.API_V1_STR}"}
