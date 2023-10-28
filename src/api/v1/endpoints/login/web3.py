@@ -127,10 +127,10 @@ async def auth(
     if not wallet:
         random_name = petname.generate(words=2, separator=" ")
         full_name = token.get("name", random_name).split(" ")
-        role = crud.role.get_by_name(RoleEnum.citizen)
-        group = crud.role.get_by_name(GroupEnum.player)
+        role = await crud.role.get_by_name(RoleEnum.citizen)
+        group = await crud.group.get_by_name(GroupEnum.player)
         user = await crud.user.create(
-            IUserCreate(
+            obj_in=IUserCreate(
                 first_name=full_name[0],
                 last_name=full_name[-1],
                 email=token.get("email"),

@@ -12,7 +12,7 @@ from schemas.group_schema import IGroupCreate, IGroupUpdate
 
 
 class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
-    async def get_group_by_name(self, *, name: str, db_session: Optional[AsyncSession] = None) -> Group:
+    async def get_by_name(self, name: str, db_session: Optional[AsyncSession] = None) -> Group:
         db_session = db_session or get_ctx_session()
         group = await db_session.execute(select(Group).where(Group.name == name))
         return group.scalar_one_or_none()
