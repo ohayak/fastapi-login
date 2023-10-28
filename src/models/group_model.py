@@ -10,9 +10,7 @@ from models.user_model import User
 
 class GroupEnum(str, Enum):
     admin = "admin"
-    player = "player"
-    gm = "gm"
-    npc = "npc"
+    user = "user"
     bot = "bot"
 
 

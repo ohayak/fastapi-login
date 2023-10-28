@@ -21,9 +21,10 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         return users.scalar_one_or_none()
 
     async def create(self, *, obj_in: IUserCreate, db_session: Optional[AsyncSession] = None) -> User:
+        db_obj = self.model.from_orm(obj_in)
         if obj_in.password:
-            obj_in.hashed_password = get_password_hash(obj_in.password)
-        user = await super().create(obj_in, db_session)
+            db_obj.hashed_password = get_password_hash(obj_in.password)
+        user = await super().create(db_obj, db_session)
         return user
 
     async def add_social_login(

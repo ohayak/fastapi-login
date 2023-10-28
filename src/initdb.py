@@ -49,7 +49,7 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=False,
             email_verified=True,
         ),
-        "group": "player",
+        "group": "user",
         "role": "citizen",
     },
     {
@@ -61,7 +61,7 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=False,
             email_verified=True,
         ),
-        "group": "player",
+        "group": "user",
         "role": "citizen",
     },
 ]
