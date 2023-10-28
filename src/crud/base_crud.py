@@ -451,9 +451,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         try:
             db_session.add(db_obj)
-            await db_session.commit()
+            await db_session.flush()
         except exc.IntegrityError:
-            db_session.rollback()
+            await db_session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="Resource already exists",
@@ -476,9 +476,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         try:
             db_session.add_all(instances)
-            await db_session.commit()
+            await db_session.flush()
         except exc.IntegrityError as e:
-            db_session.rollback()
+            await db_session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail=f"Resource already exists: {e}",
@@ -512,7 +512,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 setattr(obj_current, field, datetime.utcnow())
 
         db_session.add(obj_current)
-        await db_session.commit()
+        await db_session.flush()
         await db_session.refresh(obj_current)
         return obj_current
 
@@ -521,5 +521,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = await db_session.execute(select(self.model).where(self.model.id == id))
         obj = response.scalar_one()
         await db_session.delete(obj)
-        await db_session.commit()
+        await db_session.flush()
         return obj
+
+    async def refresh(
+        self,
+        obj_current: ModelType,
+        db_session: Optional[AsyncSession] = None,
+    ) -> ModelType:
+        db_session = db_session or get_ctx_session()
+        db_session.refresh(obj_current)
+        await db_session.flush()
+        await db_session.refresh(obj_current)
+        return obj_current

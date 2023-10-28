@@ -22,7 +22,7 @@ class CRUDRole(CRUDBase[Role, IRoleCreate, IRoleUpdate]):
         role = await super().get(id=role_id)
         role.users.append(user)
         db_session.add(role)
-        await db_session.commit()
+        await db_session.flush()
         await db_session.refresh(role)
         return role
 

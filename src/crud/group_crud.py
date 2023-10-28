@@ -24,7 +24,7 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
         group = await super().get(id=group_id)
         group.users.append(user)
         db_session.add(group)
-        await db_session.commit()
+        await db_session.flush()
         await db_session.refresh(group)
         return group
 
@@ -39,7 +39,7 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
         group = await super().get(id=group_id, db_session=db_session)
         group.users.extend(users)
         db_session.add(group)
-        await db_session.commit()
+        await db_session.flush()
         await db_session.refresh(group)
         return group
 
@@ -50,7 +50,7 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
         group = await super().get(id=group_id, db_session=db_session)
         group.users.remove(user)
         db_session.add(group)
-        await db_session.commit()
+        await db_session.flush()
         await db_session.refresh(group)
         return group
 

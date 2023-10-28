@@ -4,13 +4,14 @@ from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_pagination import add_pagination
+from redis import from_url
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from api.v1 import api_router as api_router_v1
 from core.settings import settings
 from middlewares.asql import ContextDatabaseMiddleware
-from middlewares.redis import ContextRedisMiddleware, get_ctx_client
+from middlewares.redis import ContextRedisMiddleware
 
 # Core Application Instance
 app = FastAPI(
@@ -47,9 +48,9 @@ async def on_startup():
         format="[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S %z",
     )
-    redis_client = get_ctx_client()
+    redis_client = from_url(url=settings.REDIS_URL)
     try:
-        await redis_client.ping()
+        redis_client.ping()
     except Exception:
         raise ConnectionRefusedError(f"Redis server not responding using {redis_client.get_connection_kwargs()}")
     FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")

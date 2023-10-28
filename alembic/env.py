@@ -62,7 +62,7 @@ async def run_migrations_online():
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
-    connectable = AsyncEngine(create_engine(settings.ASYNC_DB_URL, echo=settings.DB_ECHO, future=True))
+    connectable = AsyncEngine(create_engine(settings.ASYNC_DB_URL, echo=settings.DB_ECHO, future=True, connect_args={"server_settings": {"search_path": "social,public"}},))
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

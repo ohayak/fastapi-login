@@ -6,11 +6,10 @@ from fastapi_pagination import Params
 import crud
 from api import deps
 from exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
-from models.group_model import Group
+from models.group_model import Group, GroupEnum
 from models.user_model import User
 from schemas.group_schema import IGroupCreate, IGroupRead, IGroupReadWithUsers, IGroupUpdate
 from schemas.response_schema import IResponse, IResponsePage, create_response
-from schemas.role_schema import IRoleEnum
 
 router = APIRouter()
 
@@ -49,7 +48,7 @@ async def get_group_by_id(
 )
 async def create_group(
     group: IGroupCreate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Creates a new group
@@ -65,7 +64,7 @@ async def create_group(
 async def update_group(
     group_id: UUID,
     group: IGroupUpdate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Updates a group by its id
@@ -84,7 +83,7 @@ async def update_group(
 @router.delete("/{group_id}", response_model=IResponse[IGroupRead])
 async def delete_group(
     group_id: UUID,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Deletes a group by id
@@ -100,7 +99,7 @@ async def delete_group(
 async def add_user_into_a_group(
     user_id: UUID,
     group_id: UUID,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Adds a user into a group
@@ -121,7 +120,7 @@ async def add_user_into_a_group(
 async def delete_user_from_group(
     user_id: UUID,
     group_id: UUID,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     remove a user from a group

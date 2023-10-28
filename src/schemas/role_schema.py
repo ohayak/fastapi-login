@@ -1,4 +1,3 @@
-from enum import Enum
 from uuid import UUID
 
 from models.role_model import RoleBase
@@ -17,8 +16,3 @@ class IRoleUpdate(RoleBase):
 
 class IRoleRead(RoleBase):
     id: UUID
-
-
-class IRoleEnum(str, Enum):
-    admin = "admin"
-    user = "user"

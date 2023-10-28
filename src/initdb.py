@@ -13,11 +13,18 @@ from schemas.role_schema import IRoleCreate
 from schemas.user_schema import IUserCreate
 
 roles: List[IRoleCreate] = [
-    IRoleCreate(name="admin", description="Admin role"),
-    IRoleCreate(name="user", description="User role"),
+    IRoleCreate(name="senator", description="Player role"),
+    IRoleCreate(name="deputy", description="Player role"),
+    IRoleCreate(name="citizen", description="Player role"),
 ]
 
-groups: List[IGroupCreate] = [IGroupCreate(name="administrators", description="This is the first group")]
+groups: List[IGroupCreate] = [
+    IGroupCreate(name="admin", description="Administrators"),
+    IGroupCreate(name="player", description="Human Players"),
+    IGroupCreate(name="gm", description="Game Masters"),
+    IGroupCreate(name="npc", description="non-player character"),
+    IGroupCreate(name="bot", description="non-human character"),
+]
 
 
 users: List[Dict[str, Union[str, IUserCreate]]] = [
@@ -28,10 +35,10 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             password=settings.FIRST_SUPERUSER_PASSWORD,
             email=settings.FIRST_SUPERUSER_EMAIL,
             is_superuser=True,
-            is_verified=True,
+            email_verified=True,
         ),
-        "role": "admin",
-        "group": "administrators",
+        "group": "admin",
+        "role": None,
     },
     {
         "data": IUserCreate(
@@ -40,9 +47,10 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             password="P@ssUser1",
             email="user1@fast.api",
             is_superuser=False,
-            is_verified=True,
+            email_verified=True,
         ),
-        "role": "user",
+        "group": "player",
+        "role": "citizen",
     },
     {
         "data": IUserCreate(
@@ -51,9 +59,10 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             password="P@ssUser2",
             email="user2@fast.api",
             is_superuser=False,
-            is_verified=True,
+            email_verified=True,
         ),
-        "role": "user",
+        "group": "player",
+        "role": "citizen",
     },
 ]
 
@@ -83,33 +92,41 @@ async def init_data_from_csv(db_session: AsyncSession, model, file_path: str):
                 await db_session.commit()
 
 
-async def initdb(db_session: AsyncSession) -> None:
-    for role in roles:
-        role_current = await crud.role.get_by_name(name=role.name, db_session=db_session)
-        if not role_current:
-            await crud.role.create(obj_in=role, db_session=db_session)
+async def initdb() -> None:
+    db_session = create_session(settings.ASYNC_DB_URL)
+    try:
+        for role in roles:
+            role_current = await crud.role.get_by_name(name=role.name, db_session=db_session)
+            if not role_current:
+                await crud.role.create(obj_in=role, db_session=db_session)
 
-    for user in users:
-        current_user = await crud.user.get_by_email(email=user["data"].email, db_session=db_session)
-        role = await crud.role.get_by_name(name=user["role"], db_session=db_session)
-        if not current_user:
-            await crud.user.create_with_role(obj_in=user["data"], role_id=role.id, db_session=db_session)
-
-    for group in groups:
-        current_group = await crud.group.get_group_by_name(name=group.name, db_session=db_session)
-        if not current_group:
-            current_group = await crud.group.create(obj_in=group, db_session=db_session)
-        current_users = []
         for user in users:
-            if user.get("group") == current_group.name:
-                current_users.append(await crud.user.get_by_email(email=user["data"].email, db_session=db_session))
-        await crud.group.add_users_to_group(users=current_users, group_id=current_group.id, db_session=db_session)
+            current_user = await crud.user.get_by_email(email=user["data"].email, db_session=db_session)
+            if not current_user:
+                current_user = await crud.user.create(obj_in=user["data"], db_session=db_session)
+            if role := await crud.role.get_by_name(name=user["role"], db_session=db_session):
+                await crud.user.update(obj_current=current_user, obj_new={"role_id": role.id}, db_session=db_session)
+
+        for group in groups:
+            current_group = await crud.group.get_group_by_name(name=group.name, db_session=db_session)
+            if not current_group:
+                current_group = await crud.group.create(obj_in=group, db_session=db_session)
+            current_users = []
+            for user in users:
+                if user.get("group") == current_group.name:
+                    current_users.append(await crud.user.get_by_email(email=user["data"].email, db_session=db_session))
+            await crud.group.add_users_to_group(users=current_users, group_id=current_group.id, db_session=db_session)
+            await db_session.commit()
+    except Exception as e:
+        await db_session.rollback()
+        raise e
+    finally:
+        await db_session.close()
 
 
-async def main() -> None:
+async def main():
     print("Creating initial data")
-    async with create_session(settings.ASYNC_DB_URL) as session:
-        await initdb(session)
+    await initdb()
     print("Initial data created")
 
 

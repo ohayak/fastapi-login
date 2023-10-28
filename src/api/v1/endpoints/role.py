@@ -6,10 +6,11 @@ from fastapi_pagination import Params
 import crud
 from api import deps
 from exceptions import ContentNoChangeException, IdNotFoundException, NameExistException
+from models.group_model import GroupEnum
 from models.role_model import Role
 from models.user_model import User
 from schemas.response_schema import IResponse, IResponsePage, create_response
-from schemas.role_schema import IRoleCreate, IRoleEnum, IRoleRead, IRoleUpdate
+from schemas.role_schema import IRoleCreate, IRoleRead, IRoleUpdate
 
 router = APIRouter()
 
@@ -47,7 +48,7 @@ async def get_role_by_id(
 @router.post("/new", response_model=IResponse[IRoleRead], status_code=status.HTTP_201_CREATED)
 async def create_role(
     role: IRoleCreate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Create a new role
@@ -64,7 +65,7 @@ async def create_role(
 async def update_permission(
     role_id: UUID,
     role: IRoleUpdate,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Updates the permission of a role by its id
@@ -87,7 +88,7 @@ async def update_permission(
 @router.delete("/{role_id}", response_model=IResponse[IRoleRead])
 async def delete_role(
     role_id: UUID,
-    current_user: User = Depends(deps.get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(deps.get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Deletes a role by id

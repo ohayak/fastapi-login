@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from pydantic.networks import EmailStr
 from sqlmodel import select
@@ -21,18 +20,11 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         users = await db_session.execute(select(User).where(User.email == email))
         return users.scalar_one_or_none()
 
-    async def create_with_role(
-        self, *, obj_in: IUserCreate, role_id: UUID, db_session: Optional[AsyncSession] = None
-    ) -> User:
-        db_session = db_session or get_ctx_session()
-        db_obj = User.from_orm(obj_in)
+    async def create(self, *, obj_in: IUserCreate, db_session: Optional[AsyncSession] = None) -> User:
         if obj_in.password:
-            db_obj.hashed_password = get_password_hash(obj_in.password)
-        db_obj.role_id = role_id
-        db_session.add(db_obj)
-        await db_session.commit()
-        await db_session.refresh(db_obj)
-        return db_obj
+            obj_in.hashed_password = get_password_hash(obj_in.password)
+        user = await super().create(obj_in, db_session)
+        return user
 
     async def add_social_login(
         self, *, user: User, social_login: str, db_session: Optional[AsyncSession] = None
@@ -43,7 +35,7 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
             user.social_logins = social_logins
             user.updated_at = datetime.utcnow()
             db_session.add(user)
-            await db_session.commit()
+            await db_session.flush()
             await db_session.refresh(user)
         return user
 

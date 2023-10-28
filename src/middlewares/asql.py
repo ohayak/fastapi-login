@@ -1,3 +1,4 @@
+import logging
 from contextvars import ContextVar
 from typing import Dict, Optional
 
@@ -69,36 +70,31 @@ def create_session(url: str = None, schema: str = None, engine: AsyncEngine = No
     session = AsyncSession(
         bind=engine or create_engine(url, schema),
         autocommit=False,
-        autoflush=False,
-        expire_on_commit=False,
+        autoflush=True,
+        expire_on_commit=True,
     )
     return session
 
 
 class ContextDatabase:
-    def __init__(self, session_args: Dict = None, commit_on_exit: bool = False):
+    def __init__(self, session_args: Dict = None):
         self.token = None
         self.session_args = session_args or {}
-        self.commit_on_exit = commit_on_exit
-
-    async def _init_session(self):
-        self.token = _session.set(create_session(engine=_engine, **self.session_args))  # type: ignore
 
     async def __aenter__(self):
         if _engine is None:
             raise EngineNotInitialisedError
 
-        await self._init_session()
+        self.token = _session.set(create_session(engine=_engine, **self.session_args))  # type: ignore
         return type(self)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         session = _session.get()
         if exc_type is not None:
+            logging.info("Rolling back transaction due to error")
             await session.rollback()
 
-        if self.commit_on_exit:
-            await session.commit()
-
+        await session.commit()
         await session.close()
         _session.reset(self.token)
 
@@ -109,13 +105,11 @@ class ContextDatabaseMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         url: str,
         schema: str = None,
-        commit_on_exit: bool = False,
     ):
         super().__init__(app)
-        self.commit_on_exit = commit_on_exit
         global _engine
         _engine = create_engine(url, schema)
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        async with ContextDatabase(commit_on_exit=self.commit_on_exit):
+        async with ContextDatabase():
             return await call_next(request)

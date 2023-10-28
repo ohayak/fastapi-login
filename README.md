@@ -23,7 +23,7 @@ This API provides a range of features for user management and authentication. He
 
 Models are Python classes that define the structure of the data. They are used to interact with the database. Here are some of the models used in this API:
 
-- User: Represents a user in the system. It includes fields like first_name, last_name, email, is_verified, is_active, is_superuser, role_id, phone, and image_id.
+- User: Represents a user in the system. It includes fields like first_name, last_name, email, email_verified, is_active, is_superuser, role_id, phone, and image_id.
 
 - Group: Represents a group in the system. It includes fields like name, description, created_by_id, and users.
 
@@ -73,6 +73,5 @@ Once the dependencies are installed, you can start the application using the `ma
 ### Managing Data Migrations
 
 The application uses Alembic to manage data migrations. Alembic is a database migration tool for SQLAlchemy. Here are the steps to manage data migrations:
-   - Initialize Alembic: Before you can use Alembic, you need to initialize it. Run the following command in your terminal to initialize Alembic: `alembic init alembic`.
    - Generate a Migration Script: After initializing Alembic, you can generate a migration script. The migration script contains the changes you want to make to your database. Run the following command in your terminal to generate a migration script: `alembic revision --autogenerate -m "Your message"`.
    - Apply Migrations: Once you have a migration script, you can apply the migrations to your database. Run the following command in your terminal to apply migrations: `alembic upgrade head`.

@@ -1,12 +1,12 @@
 from typing import Dict, Literal
-from fastapi import APIRouter, Depends, HTTPException, Request
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
+from fastapi import APIRouter, HTTPException, Request
 
-from core.settings import settings
 import crud
-from models.user_model import User
 from core.security import create_access_token
+from core.settings import settings
+from models.user_model import User
 
 router = APIRouter()
 

@@ -23,7 +23,7 @@ async def set_token(
     token: str,
     token_type: TokenType,
     expire_time: timedelta,
-    redis_client: Redis | None,
+    redis_client: Redis | None = None,
 ) -> str:
     redis_client = redis_client or get_ctx_client()
     token_key = _gen_token_key(user_id, token_type)
@@ -35,7 +35,7 @@ async def set_token(
 async def get_tokens(
     user_id: UUID,
     token_type: TokenType,
-    redis_client: Redis | None,
+    redis_client: Redis | None = None,
 ) -> Set[str]:
     redis_client = redis_client or get_ctx_client()
     token_key = _gen_token_key(user_id, token_type)
@@ -46,7 +46,7 @@ async def get_tokens(
 async def delete_tokens(
     user_id: UUID,
     token_type: TokenType,
-    redis_client: Redis | None,
+    redis_client: Redis | None = None,
 ):
     redis_client = redis_client or get_ctx_client()
     token_key = _gen_token_key(user_id, token_type)

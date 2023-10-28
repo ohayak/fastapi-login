@@ -1,11 +1,6 @@
+from core.security import Token
+from schemas.user_schema import IUserRead
 
 
-from enum import Enum
-from typing import Literal
-
-from pydantic import BaseModel, EmailStr
-
-class IWalletSignup(BaseModel):
-    address: str
-    email: EmailStr
-    name: str
+class IUserAuthInfo(Token):
+    user_info: IUserRead

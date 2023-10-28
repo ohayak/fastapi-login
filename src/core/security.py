@@ -1,13 +1,13 @@
 import string
 from datetime import datetime, timedelta
 from random import SystemRandom
-from typing import Any, Literal, Union
+from typing import Any, Dict, Literal, Union
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
 from jose import jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from redis import Redis
 
 import crud
@@ -18,8 +18,6 @@ from utils.token import TokenType, get_tokens, set_token
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 fernet = Fernet(str.encode(settings.ENCRYPT_KEY))
 
-ALGORITHM = "HS256"
-
 
 class Token(BaseModel):
     access_token: str
@@ -28,16 +26,30 @@ class Token(BaseModel):
     expires_in: int
 
 
+def jwt_encode(claims: Dict[str, Any]):
+    return jwt.encode(claims, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def jwt_decode(token: str):
+    try:
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=settings.ALGORITHM)
+    except jwt.JWTError as e:
+        raise HTTPException(
+            status_code=403,
+            detail=str(e),
+        )
+
+
 def create_token(subject: Union[str, Any], expires_delta: timedelta) -> str:
     expire = datetime.utcnow() + expires_delta
-    to_encode = {"exp": expire, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    claims = {"exp": expire, "sub": str(subject)}
+    encoded_jwt = jwt_encode(claims)
     return encoded_jwt
 
 
 async def create_id_token(
     user_id: str,
-    redis_client: Redis | None,
+    redis_client: Redis | None = None,
 ) -> str:
     id_token_expires = timedelta(days=1)
     id_token = create_token(user_id, expires_delta=id_token_expires)
@@ -53,7 +65,7 @@ async def create_id_token(
 
 async def create_access_token(
     user_id: str,
-    redis_client: Redis | None,
+    redis_client: Redis | None = None,
 ) -> Token:
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
@@ -84,19 +96,14 @@ async def create_access_token(
 
 async def refresh_access_token(
     refresh_token: str,
-    redis_client: Redis | None,
+    redis_client: Redis | None = None,
 ) -> Token:
     try:
-        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-    except jwt.JWTClaimsError as e:
+        payload = jwt_decode(refresh_token)
+    except jwt.JWTError as e:
         raise HTTPException(
             status_code=403,
-            detail=f"Invalid refresh token: {str(e)}",
-        )
-    except (jwt.JWTError, ValidationError):
-        raise HTTPException(
-            status_code=403,
-            detail="Could not validate refresh token",
+            detail=str(e),
         )
 
     user_id = payload["sub"]
@@ -140,7 +147,7 @@ class UserNonce(BaseModel):
     user_id: str
 
 
-async def create_nonce(user_id: str, redis_client: Redis | None) -> UserNonce:
+async def create_nonce(user_id: str, redis_client: Redis | None = None) -> UserNonce:
     expires = datetime.utcnow() + timedelta(minutes=5)
     letters = string.ascii_uppercase + string.ascii_lowercase
     nonce = "".join(SystemRandom().choices(letters, k=12))

@@ -10,10 +10,10 @@ from api.deps import get_current_user, is_valid_user, user_exists
 from exceptions import ContentNoChangeException, IdNotFoundException, UserSelfDeleteException
 from middlewares.minio import Minio, get_ctx_client
 from models import Role, User
+from models.group_model import GroupEnum
 from schemas.common_schema import FilterQuery
 from schemas.media_schema import IMediaCreate
 from schemas.response_schema import IResponse, IResponsePage, create_response
-from schemas.role_schema import IRoleEnum
 from schemas.user_schema import IUserCreate, IUserRead, IUserReadWithoutGroups
 from utils.resize_image import modify_image
 
@@ -24,7 +24,7 @@ router = APIRouter()
 async def list_users(
     filters: FilterQuery = Depends(),
     params: Params = Depends(),
-    current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Retrieve users. Requires admin or manager role
@@ -46,7 +46,7 @@ async def get_my_data(
 @router.get("/{user_id}", response_model=IResponse[IUserRead])
 async def get_user_by_id(
     user_id: UUID,
-    current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Gets a user by id
@@ -60,7 +60,7 @@ async def get_user_by_id(
 @router.post("/new", response_model=IResponse[IUserRead], status_code=status.HTTP_201_CREATED)
 async def create_user(
     new_user: IUserCreate = Depends(user_exists),
-    current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Creates a new user
@@ -69,15 +69,15 @@ async def create_user(
     role = await crud.role.get(id=new_user.role_id)
     if not role:
         raise IdNotFoundException(Role, id=new_user.role_id)
-
-    user = await crud.user.create_with_role(obj_in=new_user, role_id=role.id)
+    new_user.role_id = role.id
+    user = await crud.user.create(obj_in=new_user)
     return create_response(data=user)
 
 
 @router.delete("/{user_id}", response_model=IResponse[IUserRead])
 async def delete_user(
     user: User = Depends(is_valid_user),
-    current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Deletes a user by his/her id
@@ -102,12 +102,12 @@ async def upload_my_image(
     """
     try:
         image_modified = modify_image(BytesIO(image_file.file.read()))
-        data_file = minio_client.upload_file(
+        file_path = minio_client.upload_file(
             file_name=image_file.filename,
             file_data=BytesIO(image_modified.file_data),
             content_type=image_file.content_type,
         )
-        media = IMediaCreate(title=title, description=description, path=data_file.file_name)
+        media = IMediaCreate(title=title, description=description, path=file_path)
         user = await crud.user.update_photo(
             user=current_user,
             image=media,
@@ -124,7 +124,7 @@ async def upload_my_image(
 async def update_user_info(
     user_id: UUID,
     user: IUserRead,
-    current_user: User = Depends(get_current_user(required_roles=[IRoleEnum.admin])),
+    current_user: User = Depends(get_current_user(allowed_groups=[GroupEnum.admin])),
 ):
     """
     Updates user informations

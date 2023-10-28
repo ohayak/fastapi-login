@@ -1,30 +1,33 @@
 import logging
 import random
 import string
-from datetime import timedelta
-from typing import Any, Dict, Literal
-from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi_mail import FastMail, MessageSchema, MessageType
-from jose import jwt
-from pydantic import EmailStr, ValidationError
+from pydantic import EmailStr
 from redis.asyncio import Redis
 
 import crud
-from api.deps import get_current_user, get_general_meta, get_mail_manager, user_exists
-from core.security import get_password_hash, verify_password, TokenType, Token
-from exceptions.common_exception import IdNotFoundException
+from api.deps import get_current_user, get_mail_manager, user_exists
+from core.security import (
+    Token,
+    TokenType,
+    create_access_token,
+    create_id_token,
+    get_password_hash,
+    refresh_access_token,
+    verify_password,
+)
 from middlewares.redis import get_ctx_client
+from models.role_model import RoleEnum
 from models.user_model import User
-from schemas.response_schema import IResponse, create_response
-from schemas.role_schema import IRoleEnum
+from schemas.response_schema import create_response
 from schemas.user_schema import IUserCreate, IUserRead, IUserSignup
-from core.security import create_access_token, create_id_token, refresh_access_token
-from utils.token import delete_tokens, get_tokens, set_token
+from utils.token import delete_tokens
 
 router = APIRouter()
+
 
 class OAuth2PasswordRequestForm:
     """Modified from fastapi.security.OAuth2PasswordRequestForm"""
@@ -50,8 +53,9 @@ async def _authenticate(email: EmailStr, password: str) -> User:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is inactive")
     return user
 
-@router.post("/token", response_model=Token)
-async def token(
+
+@router.post("/auth", response_model=Token)
+async def auth(
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     """
@@ -67,7 +71,7 @@ async def token(
     return data
 
 
-@router.post("/signup", response_model=IResponse[IUserRead], status_code=status.HTTP_201_CREATED)
+@router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def signup(
     request: Request,
     fm: FastMail = Depends(get_mail_manager),
@@ -76,9 +80,10 @@ async def signup(
     """
     Creates a new user with user role
     """
-    role = await crud.role.get_by_name(name=IRoleEnum.user)
+    role = await crud.role.get_by_name(name=RoleEnum.user)
     new_user = IUserCreate.from_orm(new_user)
-    user = await crud.user.create_with_role(obj_in=new_user, role_id=role.id)
+    new_user.role_id = role.id
+    user = await crud.user.create(obj_in=new_user)
     try:
         token = await create_id_token(user.id)
         message = MessageSchema(
@@ -94,7 +99,8 @@ async def signup(
         await fm.send_message(message, template_name="email_verification.jinja2")
     except Exception as err:
         logging.error(err)
-    return create_response(data=user)
+    data = await create_access_token(user.id)
+    return data
 
 
 @router.post("/signin", response_model=Token)
@@ -116,8 +122,8 @@ async def signout(
     current_user: User = Depends(get_current_user()),
     redis_client: Redis = Depends(get_ctx_client),
 ):
-    await delete_tokens(redis_client, current_user.id, TokenType.ACCESS)
-    await delete_tokens(redis_client, current_user.id, TokenType.REFRESH)
+    await delete_tokens(current_user.id, TokenType.ACCESS, redis_client)
+    await delete_tokens(current_user.id, TokenType.REFRESH, redis_client)
     response = RedirectResponse(url=redirect_url)
     response.delete_cookie("Authorization")
     return response
@@ -185,13 +191,33 @@ async def change_password(
     return data
 
 
-@router.post("/refresh-token", response_model=Token, status_code=201)
-async def refresh_token(
-    refresh_token: str = Body(...),
+@router.get("/userinfo", response_model=IUserRead)
+async def userinfo(
+    current_user: User = Depends(get_current_user()),
 ):
     """
-    Gets a new access token using the refresh token for future requests
+    Returns the user's information
     """
-    data = await refresh_access_token(refresh_token)
-    return data
+    return current_user
 
+
+@router.get("/.well-known/openid-configuration")
+async def well_known(request: Request):
+    base_url = str(request.url).removesuffix("/.well-known/openid-configuration")
+    return {
+        "issuer": base_url,
+        "token_endpoint": base_url + "/auth",
+        "authorization_endpoint": base_url + "/auth",
+        "userinfo_endpoint": base_url + "/userinfo",
+        "response_types_supported": ["id_token", "token id_token"],
+        "id_token_signing_alg_values_supported": ["HS256"],
+        "response_modes_supported": ["query"],
+        "subject_types_supported": ["public", "pairwise"],
+        "grant_types_supported": ["password"],
+        "claim_types_supported": ["normal"],
+        "claims_parameter_supported": True,
+        "claims_supported": ["sub", "email", "first_name", "last_name"],
+        "request_parameter_supported": False,
+        "request_uri_parameter_supported": False,
+        "scopes_supported": ["openid", "profile"],
+    }

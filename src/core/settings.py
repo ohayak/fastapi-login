@@ -6,7 +6,7 @@ from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, RedisDsn, 
 class Settings(BaseSettings):
     API_VERSION: str = "v1"
     API_V1_STR: str = f"/{API_VERSION}"
-    PROJECT_NAME: str = "fastapi-login"
+    PROJECT_NAME: str = "oniverse-api"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 1  # 1 hour
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 100  # 100 days
     WEB_CONCURRENCY = 9
@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "KJMAgRxFdlijZPU8KLLWiJYsebxcDxpTMZDDqGRjJZg"
     ENCRYPT_KEY: str = "q+Y0dzUKGhfDDpAYouIUqLsY/NBIQJ2NMKFWeqjxsk8="
     BACKEND_CORS_ORIGINS: Union[List[str], List[AnyHttpUrl]] = ["*"]
+    ALGORITHM = "HS256"
 
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
@@ -90,6 +91,10 @@ class Settings(BaseSettings):
     MICROSOFT_CLIENT_ID: str = ""
     MICROSOFT_CLIENT_SECRET: str = ""
     MICROSOFT_CONF_URL: str = "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration"
+
+    DISCORD_CLIENT_ID: str = ""
+    DISCORD_CLIENT_SECRET: str = ""
+    DISCORD_CONF_URL: str = "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration"
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:

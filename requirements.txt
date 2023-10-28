@@ -1,6 +1,6 @@
 --prefer-binary
 fastapi==0.103.2
-sqlmodel==0.0.8
+sqlmodel==0.0.10
 alembic==1.12.0
 python-dotenv==1.0.0
 email-validator<2.0.0
