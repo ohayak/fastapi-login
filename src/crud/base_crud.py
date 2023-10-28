@@ -530,7 +530,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session: Optional[AsyncSession] = None,
     ) -> ModelType:
         db_session = db_session or get_ctx_session()
-        db_session.refresh(obj_current)
         await db_session.flush()
         await db_session.refresh(obj_current)
         return obj_current
