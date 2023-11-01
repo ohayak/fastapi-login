@@ -49,7 +49,7 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=False,
             email_verified=True,
         ),
-        "group": "user",
+        "group": "player",
         "role": "citizen",
     },
     {
@@ -61,7 +61,7 @@ users: List[Dict[str, Union[str, IUserCreate]]] = [
             is_superuser=False,
             email_verified=True,
         ),
-        "group": "user",
+        "group": "player",
         "role": "citizen",
     },
 ]
@@ -96,26 +96,25 @@ async def initdb() -> None:
     db_session = create_session(settings.ASYNC_DB_URL)
     try:
         for role in roles:
-            role_current = await crud.role.get_by_name(name=role.name, db_session=db_session)
+            role_current = await crud.role.get_by("name", role.name, db_session=db_session)
             if not role_current:
                 await crud.role.create(obj_in=role, db_session=db_session)
 
         for user in users:
-            current_user = await crud.user.get_by_email(email=user["data"].email, db_session=db_session)
+            current_user = await crud.user.get_by("email", user["data"].email, db_session=db_session)
             if not current_user:
                 current_user = await crud.user.create(obj_in=user["data"], db_session=db_session)
-            if role := await crud.role.get_by_name(name=user["role"], db_session=db_session):
+            if role := await crud.role.get_by("name", user["role"], db_session=db_session):
                 await crud.user.update(obj_current=current_user, obj_new={"role_id": role.id}, db_session=db_session)
 
         for group in groups:
-            current_group = await crud.group.get_group_by_name(name=group.name, db_session=db_session)
+            current_group = await crud.group.get_by("name", group.name, db_session=db_session)
             if not current_group:
                 current_group = await crud.group.create(obj_in=group, db_session=db_session)
-            current_users = []
             for user in users:
                 if user.get("group") == current_group.name:
-                    current_users.append(await crud.user.get_by_email(email=user["data"].email, db_session=db_session))
-            await crud.group.add_users_to_group(users=current_users, group_id=current_group.id, db_session=db_session)
+                    user_obj = await crud.user.get_by("email", user["data"].email, db_session=db_session)
+                    await crud.user.add_to_group(user_obj, group_id=current_group.id, db_session=db_session)
             await db_session.commit()
     except Exception as e:
         await db_session.rollback()

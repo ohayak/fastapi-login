@@ -91,7 +91,7 @@ class ContextDatabase:
     async def __aexit__(self, exc_type, exc_value, traceback):
         session = _session.get()
         if exc_type is not None:
-            logging.info("Rolling back transaction due to error")
+            logging.info(f"Rolling back transaction due to error: {exc_value}")
             await session.rollback()
 
         await session.commit()

@@ -1,19 +1,15 @@
-from typing import List
+from typing import Any, Dict, List
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer
 from fastapi_mail import ConnectionConfig, FastMail
 
 import crud
-from core.security import jwt_decode
-from core.settings import settings
-from models.group_model import GroupEnum
-from models.role_model import RoleEnum
+from core.security import JWSBearer
 from models.user_model import User
 from schemas.common_schema import IMetaGeneral
 from schemas.user_schema import IUserCreate, IUserSignup
-from utils.token import TokenType, get_tokens
 
 
 async def get_general_meta() -> IMetaGeneral:
@@ -21,48 +17,31 @@ async def get_general_meta() -> IMetaGeneral:
     return IMetaGeneral(roles=current_roles)
 
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/oauth2/token")
-
-
-def get_current_user(allowed_roles: List[RoleEnum] = [], allowed_groups: List[GroupEnum] = []) -> User:
+def get_current_user(
+    bearer_token: HTTPBearer = JWSBearer(),
+    required_scopes: List[str] = [],
+) -> User:
     async def current_user(
-        token: str = Depends(reusable_oauth2),
+        jwt_payload: Dict[str, Any] = Depends(bearer_token),
     ) -> User:
-        payload = jwt_decode(token)
-        user_id = payload["sub"]
-        valid_access_tokens = await get_tokens(user_id, TokenType.ACCESS)
-        if not valid_access_tokens or token not in valid_access_tokens:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unknown token",
-            )
-        user: User = await crud.user.get(id=user_id)
+        user: User = await crud.user.get(id=jwt_payload["sub"])
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Inactive user")
 
-        if allowed_roles:
-            is_valid_role = False
-            for role in allowed_roles:
-                if role == user.role.name:
-                    is_valid_role = True
-            if not is_valid_role:
+        if required_scopes:
+            if user_scopes := jwt_payload.get("scopes"):
+                if required_scopes not in user_scopes:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="You don't have enough permissions for this action",
+                    )
+            else:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Role {allowed_roles} is required for this action",
-                )
-
-        if allowed_groups:
-            is_valid_group = False
-            for group in allowed_groups:
-                if group in user.groups:
-                    is_valid_group = True
-            if not is_valid_group:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Group {allowed_groups} is required for this action",
+                    detail="Missing scopes",
                 )
 
         return user
@@ -71,7 +50,7 @@ def get_current_user(allowed_roles: List[RoleEnum] = [], allowed_groups: List[Gr
 
 
 async def user_exists(new_user: IUserSignup | IUserCreate) -> IUserCreate:
-    user = await crud.user.get_by_email(email=new_user.email)
+    user = await crud.user.get_by("email", email=new_user.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

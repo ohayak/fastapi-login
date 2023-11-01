@@ -4,13 +4,15 @@ from typing import List
 from sqlmodel import VARCHAR, Column, Field, Relationship, SQLModel
 
 from models.base_uuid_model import BaseUUIDModel
-from models.links_model import LinkGroupUser
+from models.links_model import GroupScopeLink, GroupUserLink, Scope
 from models.user_model import User
 
 
 class GroupEnum(str, Enum):
     admin = "admin"
-    user = "user"
+    player = "player"
+    gm = "gm"
+    npc = "npc"
     bot = "bot"
 
 
@@ -20,8 +22,7 @@ class GroupBase(SQLModel):
 
 
 class Group(BaseUUIDModel, GroupBase, table=True):
-    users: List["User"] = Relationship(
-        back_populates="groups",
-        link_model=LinkGroupUser,
-        sa_relationship_kwargs={"lazy": "selectin"},
+    scopes: List[Scope] = Relationship(link_model=GroupScopeLink, sa_relationship_kwargs={"lazy": "selectin"})
+    users: List[User] = Relationship(
+        back_populates="groups", link_model=GroupUserLink, sa_relationship_kwargs={"lazy": "selectin"}
     )

@@ -20,5 +20,5 @@ async def get_all_countries():
 async def get_country_by_code(
     code: str,
 ):
-    country_item = await country.get_by_code(code)
+    country_item = await country.get_by("code", code)
     return create_response(data=country_item)

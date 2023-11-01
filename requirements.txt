@@ -25,5 +25,5 @@ hypercorn==0.14.4
 bcrypt==4.0.1
 fastapi-cache2[redis]==0.2.1
 cryptography==41.0.4
-web3==6.11.0
+siwe==2.2.0
 petname==2.6.0

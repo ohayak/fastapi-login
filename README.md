@@ -38,7 +38,7 @@ Schemas are Pydantic models that are used for data validation and serialization.
 
 CRUD operations are defined in the crud directory. Each file in this directory corresponds to a model and defines the CRUD operations for that model. Here are some of the CRUD operations defined in this API:
 
-- CRUDUser: Defines the CRUD operations for the User model. It includes methods like get_by_email, create_with_role, add_social_login, and authenticate.
+- CRUDUser: Defines the CRUD operations for the User model. It includes methods like get_by, create_with_role, add_social_login, and authenticate.
 - CRUDGroup: Defines the CRUD operations for the Group model.
 
 ## Endpoints

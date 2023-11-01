@@ -10,15 +10,7 @@ from redis.asyncio import Redis
 
 import crud
 from api.deps import get_current_user, get_mail_manager, user_exists
-from core.security import (
-    Token,
-    TokenType,
-    create_access_token,
-    create_id_token,
-    get_password_hash,
-    refresh_access_token,
-    verify_password,
-)
+from core.security import Token, TokenType, create_token, get_password_hash, refresh_token, verify_password
 from middlewares.redis import get_ctx_client
 from models.role_model import RoleEnum
 from models.user_model import User
@@ -59,13 +51,13 @@ async def auth(
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     """
-    OAuth2 compatible token login, get an access token for future requests
+    OAuth2 compatible token login, get a token for future requests
     """
     if form_data.grant_type == "password":
         user = await _authenticate(form_data.username, form_data.password)
-        data = await create_access_token(user.id)
+        data = await create_token(user.id)
     elif form_data.grant_type == "refresh_token":
-        data = await refresh_access_token(form_data.refresh_token)
+        data = await refresh_token(form_data.refresh_token)
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_grant")
     return data
@@ -80,12 +72,12 @@ async def signup(
     """
     Creates a new user with user role
     """
-    role = await crud.role.get_by_name(name=RoleEnum.user)
+    role = await crud.role.get_by("name", RoleEnum.user)
     new_user = IUserCreate.from_orm(new_user)
     new_user.role_id = role.id
     user = await crud.user.create(obj_in=new_user)
     try:
-        token = await create_id_token(user.id)
+        token = await create_token(user.id)
         message = MessageSchema(
             subject="Verify Your Email",
             recipients=[user.email],
@@ -99,7 +91,7 @@ async def signup(
         await fm.send_message(message, template_name="email_verification.jinja2")
     except Exception as err:
         logging.error(err)
-    data = await create_access_token(user.id)
+    data = await create_token(user.id)
     return data
 
 
@@ -112,7 +104,7 @@ async def signin(
     Login for all users
     """
     user = await _authenticate(email, password)
-    data = await create_access_token(user.id)
+    data = await create_token(user.id)
     return data
 
 
@@ -120,10 +112,8 @@ async def signin(
 async def signout(
     redirect_url: str = Query("/"),
     current_user: User = Depends(get_current_user()),
-    redis_client: Redis = Depends(get_ctx_client),
 ):
-    await delete_tokens(current_user.id, TokenType.ACCESS, redis_client)
-    await delete_tokens(current_user.id, TokenType.REFRESH, redis_client)
+    await delete_tokens(current_user.id, TokenType.JWT)
     response = RedirectResponse(url=redirect_url)
     response.delete_cookie("Authorization")
     return response
@@ -137,7 +127,7 @@ async def reset_password(
     """
     Reset password
     """
-    current_user = await crud.user.get_by_email(email=email)
+    current_user = await crud.user.get_by("email", email)
     if not current_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -184,10 +174,9 @@ async def change_password(
     new_hashed_password = get_password_hash(new_password)
     await crud.user.update(obj_current=current_user, obj_new={"hashed_password": new_hashed_password})
 
-    await delete_tokens(current_user.id, TokenType.ACCESS, redis_client)
-    await delete_tokens(current_user.id, TokenType.REFRESH, redis_client)
+    await delete_tokens(current_user.id, TokenType.JWT, redis_client)
 
-    data = await create_access_token(current_user.id, redis_client)
+    data = await create_token(current_user.id, redis_client)
     return data
 
 

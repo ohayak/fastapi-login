@@ -9,9 +9,7 @@ from middlewares.redis import get_ctx_client
 
 
 class TokenType(str, Enum):
-    ACCESS = "access_token"
-    REFRESH = "refresh_token"
-    ID = "id_token"
+    JWT = "jwt"
 
 
 def _gen_token_key(user_id: UUID, token_type: str) -> str:

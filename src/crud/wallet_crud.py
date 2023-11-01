@@ -11,17 +11,12 @@ from schemas.wallet_schema import IWalletCreate, IWalletUpdate
 
 
 class CRUDWallet(CRUDBase[Wallet, IWalletCreate, IWalletUpdate]):
-    async def get_by_name(
-        self, user_id: UUID, name: str, db_session: Optional[AsyncSession] = None
-    ) -> Optional[Wallet]:
+    async def delete_all_user_wallets(self, user_id: UUID, db_session: Optional[AsyncSession] = None):
         db_session = db_session or get_ctx_session()
-        wallet = await db_session.execute(select(Wallet).where((Wallet.user_id == user_id) & (Wallet.name == name)))
-        return wallet.scalar_one_or_none()
-
-    async def get_by_address(self, address: str, db_session: Optional[AsyncSession] = None) -> Optional[Wallet]:
-        db_session = db_session or get_ctx_session()
-        wallet = await db_session.execute(select(Wallet).where(Wallet.address == address))
-        return wallet.scalar_one_or_none()
+        response = await db_session.execute(select(self.model).where(self.model.user_id == user_id))
+        for obj in response.scalars().all():
+            await db_session.delete(obj)
+        await db_session.flush()
 
 
 wallet = CRUDWallet(Wallet)

@@ -1,36 +1,37 @@
 import string
 from datetime import datetime, timedelta
 from random import SystemRandom
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, Literal, Mapping
+from uuid import UUID
 
 from cryptography.fernet import Fernet
-from fastapi import HTTPException
-from jose import jwt
+from fastapi import HTTPException, Request, status
+from fastapi.security import HTTPBearer
+from fastapi.security.utils import get_authorization_scheme_param
+from jose import exceptions, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from redis import Redis
 
-import crud
 from core.settings import settings
 from utils.nonce import set_nonce
-from utils.token import TokenType, get_tokens, set_token
+from utils.token import TokenType, delete_tokens, get_tokens, set_token
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 fernet = Fernet(str.encode(settings.ENCRYPT_KEY))
 
 
 class Token(BaseModel):
-    access_token: str
-    refresh_token: str
+    jwt: str
     token_type: Literal["Bearer"] = "Bearer"
     expires_in: int
 
 
-def jwt_encode(claims: Dict[str, Any]):
+def jwt_encode(claims: Dict[str, Any]) -> str:
     return jwt.encode(claims, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def jwt_decode(token: str):
+def jwt_decode(token: str) -> Dict[str, Any]:
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=settings.ALGORITHM)
     except jwt.JWTError as e:
@@ -40,66 +41,34 @@ def jwt_decode(token: str):
         )
 
 
-def create_token(subject: Union[str, Any], expires_delta: timedelta) -> str:
-    expire = datetime.utcnow() + expires_delta
-    claims = {"exp": expire, "sub": str(subject)}
-    encoded_jwt = jwt_encode(claims)
-    return encoded_jwt
-
-
-async def create_id_token(
-    user_id: str,
-    redis_client: Redis | None = None,
-) -> str:
-    id_token_expires = timedelta(days=1)
-    id_token = create_token(user_id, expires_delta=id_token_expires)
-    await set_token(
-        redis_client,
-        user_id,
-        id_token,
-        TokenType.ID,
-        id_token_expires,
-    )
-    return id_token
-
-
-async def create_access_token(
+async def create_token(
     user_id: str,
     redis_client: Redis | None = None,
 ) -> Token:
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-    access_token = create_token(user_id, expires_delta=access_token_expires)
-    refresh_token = create_token(user_id, expires_delta=refresh_token_expires)
+    expires_in = timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
+    expire_date = datetime.utcnow() + expires_in
+    claims = {"exp": expire_date, "sub": str(user_id)}
+    encoded_jwt = jwt_encode(claims)
     await set_token(
         user_id,
-        access_token,
-        TokenType.ACCESS,
-        access_token_expires,
-        redis_client,
-    )
-    await set_token(
-        user_id,
-        refresh_token,
-        TokenType.REFRESH,
-        refresh_token_expires,
+        encoded_jwt,
+        TokenType.JWT,
+        expires_in,
         redis_client,
     )
     data = Token(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_in=access_token_expires.seconds,
+        jwt=encoded_jwt,
+        expires_in=expires_in.seconds,
     )
-
     return data
 
 
-async def refresh_access_token(
-    refresh_token: str,
+async def refresh_token(
+    token: str,
     redis_client: Redis | None = None,
 ) -> Token:
     try:
-        payload = jwt_decode(refresh_token)
+        payload = jwt_decode(token)
     except jwt.JWTError as e:
         raise HTTPException(
             status_code=403,
@@ -107,22 +76,19 @@ async def refresh_access_token(
         )
 
     user_id = payload["sub"]
-    valid_refresh_tokens = await get_tokens(user_id, TokenType.REFRESH, redis_client)
-    if valid_refresh_tokens and refresh_token not in valid_refresh_tokens:
-        raise HTTPException(status_code=403, detail="Unknown refresh token")
+    valid_tokens = await get_tokens(user_id, TokenType.JWT, redis_client)
+    if valid_tokens and token not in valid_tokens:
+        raise HTTPException(status_code=403, detail="Invalid Token")
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    user = await crud.user.get(id=user_id)
-    if user.is_active:
-        access_token = create_token(user_id, expires_delta=access_token_expires)
-        await set_token(user.id, access_token, TokenType.ACCESS, access_token_expires, redis_client)
-        return Token(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            expires_in=access_token_expires.seconds,
-        )
-    else:
-        raise HTTPException(status_code=404, detail="User inactive")
+    new_token = await create_token(user_id, redis_client)
+    return new_token
+
+
+async def revoke_token(
+    user_id: str,
+    redis_client: Redis | None = None,
+):
+    await delete_tokens(user_id, TokenType.JWT, redis_client)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -142,14 +108,54 @@ def get_content(variable: str) -> str:
     return fernet.decrypt(variable.encode()).decode()
 
 
-class UserNonce(BaseModel):
-    nonce: str
-    user_id: str
-
-
-async def create_nonce(user_id: str, redis_client: Redis | None = None) -> UserNonce:
-    expires = datetime.utcnow() + timedelta(minutes=5)
-    letters = string.ascii_uppercase + string.ascii_lowercase
+async def create_nonce(session_id: UUID, redis_client: Redis | None = None) -> str:
+    expires = timedelta(minutes=5)
+    letters = string.ascii_uppercase + string.ascii_lowercase + string.digits
     nonce = "".join(SystemRandom().choices(letters, k=12))
-    await set_nonce(user_id, nonce, expires, redis_client)
-    return UserNonce(nonce=nonce, user_id=user_id)
+    await set_nonce(session_id, nonce, expires, redis_client)
+    return nonce
+
+
+class TrustedJWSBearer(HTTPBearer):
+    def __init__(self, key: str | bytes | Mapping[str, Any], options: Mapping[str, Any] | None = None, **kwargs):
+        self.key = key
+        self.options = options
+        super().__init__(**kwargs)
+
+    def __call__(self, request: Request) -> Dict[str, Any]:
+        authorization = request.headers.get("Authorization")
+        scheme, param = get_authorization_scheme_param(authorization)
+        if not authorization or scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        algorithm = jwt.get_unverified_header(param).get("alg")
+
+        try:
+            jwt_payload = jwt.decode(param, self.key, algorithms=algorithm, options=self.options)
+        except exceptions.JWTError as e:
+            raise HTTPException(
+                status_code=403,
+                detail=str(e),
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return jwt_payload
+
+
+class JWSBearer(HTTPBearer):
+    async def __call__(self, request: Request) -> Dict[str, Any]:
+        auth = super().__call__(request)
+        token = auth.credentials
+        jwt_payload = jwt_decode(auth.credentials)
+        user_id = jwt_payload["sub"]
+        valid_tokens = await get_tokens(user_id, TokenType.JWT)
+        if not valid_tokens or token not in valid_tokens:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalide token",
+            )
+        return jwt_payload

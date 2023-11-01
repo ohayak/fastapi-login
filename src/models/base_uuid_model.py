@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.orm import declared_attr
-from sqlmodel import Field
+from sqlmodel import Column, DateTime, Field
 from sqlmodel import SQLModel as _SQLModel
 from uuid6 import UUID, uuid7
 
@@ -22,5 +22,5 @@ class BaseUUIDModel(SQLModel):
         index=True,
         nullable=False,
     )
-    updated_at: Optional[datetime] = Field(default=datetime.now())
-    created_at: Optional[datetime] = Field(default=datetime.now())
+    updated_at: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True), default=datetime.now()))
+    created_at: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True), default=datetime.now()))

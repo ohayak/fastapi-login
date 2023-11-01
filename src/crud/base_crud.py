@@ -40,6 +40,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response = await db_session.execute(query)
         return response.scalar_one_or_none()
 
+    async def get_by(self, attr: str, value: Any, db_session: Optional[AsyncSession] = None) -> Optional[ModelType]:
+        db_session = db_session or get_ctx_session()
+        query = select(self.model).where(getattr(self.model, attr) == value)
+        response = await db_session.execute(query)
+        return response.scalar_one_or_none()
+
     async def get_by_ids(
         self,
         ids: List[Union[UUID, str]],
@@ -452,11 +458,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         try:
             db_session.add(db_obj)
             await db_session.flush()
-        except exc.IntegrityError:
+        except exc.IntegrityError as e:
             await db_session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail="Resource already exists",
+                detail=str(e),
             )
         await db_session.refresh(db_obj)
         return db_obj
@@ -481,7 +487,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await db_session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail=f"Resource already exists: {e}",
+                detail=str(e),
             )
 
         for db_obj in instances:

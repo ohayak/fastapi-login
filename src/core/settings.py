@@ -1,14 +1,13 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, RedisDsn, validator
+from pydantic import AnyHttpUrl, BaseSettings, EmailStr, FilePath, PostgresDsn, RedisDsn, validator
 
 
 class Settings(BaseSettings):
     API_VERSION: str = "v1"
     API_V1_STR: str = f"/{API_VERSION}"
     PROJECT_NAME: str = "oniverse-api"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 1  # 1 hour
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 100  # 100 days
+    JWT_EXPIRE_MINUTES: int = 60 * 1  # 1 hour
     WEB_CONCURRENCY = 9
     DB_POOL_SIZE = 83
     POOL_SIZE = max(DB_POOL_SIZE // WEB_CONCURRENCY, 5)
@@ -109,6 +108,8 @@ class Settings(BaseSettings):
     @validator("LOG_LEVEL", pre=True)
     def log_level(cls, v: str) -> str:
         return v.upper()
+
+    DYNAMICS_PUBLIC_KEY_FILE: FilePath
 
 
 settings = Settings()

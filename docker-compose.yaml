@@ -42,6 +42,7 @@ services:
       - ACCESSLOG=true
       - FIRST_SUPERUSER_EMAIL=admin@fast.api
       - FIRST_SUPERUSER_PASSWORD=password
+      - DYNAMICS_PUBLIC_KEY_FILE=./src/dynamics.pub
     depends_on:
       redis:
         condition: service_started

@@ -14,17 +14,6 @@ DataSchemaType = TypeVar("DataSchemaType", bound=BaseModel)
 
 
 class CRUDData(CRUDBase[DataModelType, DataSchemaType, DataSchemaType]):
-    async def get_by_code(
-        self,
-        code: str,
-        *,
-        db_session: Optional[AsyncSession] = None,
-    ) -> DataModelType:
-        db_session = db_session or get_ctx_session()
-        query = select(self.model).where(self.model.code == code)
-        response = await db_session.execute(query)
-        return response.scalar_one_or_none()
-
     async def get_all(
         self,
         *,
