@@ -10,6 +10,8 @@ from models.user_model import User
 class SocialAccountProviderEnum(str, Enum):
     twitter = "twitter"
     discord = "discord"
+    google = "google"
+    apple = "apple"
 
 
 class SocialAccountBase(SQLModel):

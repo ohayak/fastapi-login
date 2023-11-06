@@ -22,7 +22,7 @@ fernet = Fernet(str.encode(settings.ENCRYPT_KEY))
 
 
 class Token(BaseModel):
-    jwt: str
+    access_token: str
     token_type: Literal["Bearer"] = "Bearer"
     expires_in: int
 
@@ -57,7 +57,7 @@ async def create_token(
         redis_client,
     )
     data = Token(
-        jwt=encoded_jwt,
+        access_token=encoded_jwt,
         expires_in=expires_in.seconds,
     )
     return data
@@ -148,7 +148,7 @@ class TrustedJWSBearer(HTTPBearer):
 
 class JWSBearer(HTTPBearer):
     async def __call__(self, request: Request) -> Dict[str, Any]:
-        auth = super().__call__(request)
+        auth = await super().__call__(request)
         token = auth.credentials
         jwt_payload = jwt_decode(auth.credentials)
         user_id = jwt_payload["sub"]
@@ -159,3 +159,6 @@ class JWSBearer(HTTPBearer):
                 detail="Invalide token",
             )
         return jwt_payload
+
+
+jws_bearer = JWSBearer()

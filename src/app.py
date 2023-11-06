@@ -8,16 +8,18 @@ from redis import from_url
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from api.v1 import api_router as api_router_v1
+from api import router
 from core.settings import settings
 from middlewares.asql import ContextDatabaseMiddleware
 from middlewares.redis import ContextRedisMiddleware
 
 # Core Application Instance
 app = FastAPI(
-    title=settings.PROJECT_NAME,
+    title=settings.API_TITLE,
     version=settings.API_VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
@@ -36,11 +38,6 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 
-@app.get("/")
-async def root():
-    return {"message": f"Welcome to {settings.PROJECT_NAME} {settings.API_V1_STR}"}
-
-
 @app.on_event("startup")
 async def on_startup():
     logging.basicConfig(
@@ -57,6 +54,6 @@ async def on_startup():
     logging.info("startup fastapi")
 
 
-# Add Routers
-app.include_router(api_router_v1, prefix=settings.API_V1_STR)
+# Add Apps
+app.include_router(router)
 add_pagination(app)

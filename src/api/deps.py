@@ -50,7 +50,7 @@ def get_current_user(
 
 
 async def user_exists(new_user: IUserSignup | IUserCreate) -> IUserCreate:
-    user = await crud.user.get_by("email", email=new_user.email)
+    user = await crud.user.get_by("email", new_user.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

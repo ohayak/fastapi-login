@@ -97,7 +97,7 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         return user
 
     async def authenticate(self, *, email: EmailStr, password: str) -> Optional[User]:
-        user = await self.get_by("email", email=email)
+        user = await self.get_by("email", email)
         if not user:
             return None
         if not verify_password(password, user.hashed_password):

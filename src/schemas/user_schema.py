@@ -39,19 +39,7 @@ class IUserRead(UserBase):
     image: Optional[IImageMediaRead]
     wallets: Optional[List[IWalletRead]]
     social_accounts: Optional[List[ISocialAccountRead]]
-    scopes: Optional[List[str]]
     primary_wallet: Optional[IWalletRead]
-
-    @validator("scopes", pre=True)
-    def validate_scopes(cls, value, values) -> List[str]:
-        scopes = []
-        if role := values.get("role"):
-            scopes.expend(role.scopes)
-
-        if groups := values.get("groups"):
-            for group in groups:
-                scopes.extend(group.scopes)
-        return scopes
 
     @validator("role", pre=True)
     def validate_role(cls, value: Role, values) -> Optional[str]:
@@ -70,7 +58,6 @@ class IUserUpsert(UserBase):
     id: UUID
     password: Optional[str]
     role: Optional[str]
-    groups: Optional[List[str]]
     wallets: Optional[List[IWalletCreateWithId]]
     social_accounts: Optional[List[ISocialAccountCreateWithId]]
     primary_wallet: Optional[str]

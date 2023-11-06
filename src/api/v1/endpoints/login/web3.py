@@ -8,11 +8,11 @@ from siwe import SiweMessage, VerificationError
 from uuid6 import uuid7
 
 import crud
-from core.security import JWSBearer, Token, TrustedJWSBearer, create_nonce, create_token, revoke_token
+from core.security import Token, TrustedJWSBearer, JWSBearer, create_nonce, create_token, jws_bearer, revoke_token
 from core.settings import settings
 from exceptions.common_exception import NameNotFoundException
 from middlewares.asql import AsyncSession, get_ctx_session
-from models.group_model import Group, GroupEnum
+from models.group_model import GroupEnum
 from models.role_model import Role, RoleEnum
 from schemas.login_schema import IUserAuthInfo
 from schemas.response_schema import IResponse, create_response
@@ -23,13 +23,15 @@ from utils.nonce import get_nonce
 router = APIRouter()
 
 
-class DynamicsJWSBearer(TrustedJWSBearer):
-    def __init__(self):
-        with open(settings.DYNAMICS_PUBLIC_KEY_FILE) as f:
-            super().__init__(f.read(), {"verify_aud": False})
+# class DynamicsJWSBearer(TrustedJWSBearer):
+#     def __init__(self):
+#         with open(settings.DYNAMICS_PUBLIC_KEY_FILE) as f:
+#             super().__init__(f.read(), {"verify_aud": False})
 
 
-reusable_jwt_bearer = DynamicsJWSBearer()
+# reusable_jwt_bearer = DynamicsJWSBearer()
+reusable_jwt_bearer = JWSBearer()
+
 
 
 @router.post("/verify", response_model=IUserAuthInfo)
@@ -89,7 +91,7 @@ async def nonce(
 
 @router.post("/refresh", response_model=Token)
 async def refresh(
-    jwt: Dict[str, Any] = Depends(JWSBearer()),
+    jwt: Dict[str, Any] = Depends(jws_bearer),
 ):
     """
     Gets a new access token using the refresh token for future requests
@@ -100,7 +102,7 @@ async def refresh(
 
 @router.post("/revoke")
 async def revoke(
-    jwt: Dict[str, Any] = Depends(JWSBearer()),
+    jwt: Dict[str, Any] = Depends(jws_bearer),
 ):
     await revoke_token(jwt["sub"])
 
@@ -120,7 +122,7 @@ async def register(
     """
     Register a user
     """
-    if user.id != jwt["sub"]:
+    if str(user.id) != jwt["sub"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     if user_found := await crud.user.get(id=user.id, db_session=db):
@@ -135,16 +137,16 @@ async def register(
         else:
             raise NameNotFoundException(Role, name=user.role)
 
-    groups = user.groups
-    if groups is not None:
-        if groups == []:
-            await crud.user.remove_from_all_groups(user_found, db_session=db)
-        else:
-            for group_name in groups:
-                if group := await crud.group.get_by("name", group_name, db_session=db):
-                    user_found = await crud.user.add_to_group(user=user_found, group_id=group.id, db_session=db)
-                else:
-                    raise NameNotFoundException(Group, name=group_name)
+    # groups = user.groups
+    # if groups is not None:
+    #     if groups == []:
+    #         await crud.user.remove_from_all_groups(user_found, db_session=db)
+    #     else:
+    #         for group_name in groups:
+    #             if group := await crud.group.get_by("name", group_name, db_session=db):
+    #                 user_found = await crud.user.add_to_group(user=user_found, group_id=group.id, db_session=db)
+    #             else:
+    #                 raise NameNotFoundException(Group, name=group_name)
 
     wallets = user.wallets
     if wallets is not None:
