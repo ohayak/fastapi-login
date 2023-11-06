@@ -32,17 +32,13 @@ router = APIRouter(prefix="/{version}", dependencies=[Depends(get_current_userna
 
 
 @router.get("/docs", include_in_schema=False)
-async def get_swagger_documentation(request: Request, version: str):
-    openapi_url = request.url_for('openapi', version=version)
-    openapi_url = openapi_url.replace(scheme=request.url.scheme)
-    return get_swagger_ui_html(openapi_url=openapi_url, title="docs")
+async def get_swagger_documentation(version: str):
+    return get_swagger_ui_html(openapi_url=f"./openapi.json", title="docs")
 
 
 @router.get("/redoc", include_in_schema=False)
-async def get_redoc_documentation(request: Request, version: str):
-    openapi_url = request.url_for('openapi', version=version)
-    openapi_url = openapi_url.replace(scheme=request.url.scheme)
-    return get_redoc_html(openapi_url=openapi_url, title="docs")
+async def get_redoc_documentation(version: str):
+    return get_redoc_html(openapi_url=f"./openapi.json", title="docs")
 
 
 @router.get("/openapi.json", include_in_schema=False)
